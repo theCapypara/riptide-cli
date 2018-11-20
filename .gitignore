@@ -69,7 +69,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+riptide/config/document/_build/
 
 # PyBuilder
 target/
@@ -108,3 +108,6 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+### Custom
+dev-draft/
+dev-test/
