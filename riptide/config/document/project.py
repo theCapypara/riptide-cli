@@ -17,6 +17,7 @@ class Project(YamlConfigDocument):
         return Schema(
             {
                 Optional('$ref'): str,  # reference to other Project documents
+                Optional('$path'): str,  # Path to the project root, added by system after loading.
                 'name': str,
                 'src': str,
                 Optional('import'): {
