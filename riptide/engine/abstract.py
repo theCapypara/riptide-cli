@@ -1,13 +1,14 @@
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict, Union
 
+from riptide.config.document.config import Config
 from riptide.config.document.project import Project
-from riptide.engine.results import StartResultStep, StopResultStep, StatusResult, MultiResultQueue
+from riptide.engine.results import StartStopResultStep, StatusResult, MultiResultQueue
 
 
 class AbstractEngine(ABC):
     @abstractmethod
-    def start_project(self, project: Project) -> MultiResultQueue[StartResultStep]:
+    def start_project(self, project: Project) -> MultiResultQueue[StartStopResultStep]:
         """
         Starts all services in the project
         :type project: Project
@@ -16,7 +17,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def stop_project(self, project: Project) -> MultiResultQueue[StopResultStep]:
+    def stop_project(self, project: Project) -> MultiResultQueue[StartStopResultStep]:
         """
         Stops all services in the project
         :type project: Project
@@ -25,9 +26,10 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def status(self, project: Project) -> Dict[str, StatusResult]:
+    def status(self, project: Project, system_config: Config) -> Dict[str, StatusResult]:
         """
         Returns the status for the given project
+        :param system_config: Main system config
         :param project: Project
         :return: StatusResult
         """

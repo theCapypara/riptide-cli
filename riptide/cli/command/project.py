@@ -32,7 +32,8 @@ async def start(ctx):
     except Exception as err:
         raise RiptideCliError("Error starting the services", ctx) from err
     echo("DONE")
-    echo(engine.status(project))
+    # todo: in eigene methode + error handling und nice display
+    echo(engine.status(project, ctx.parent.system_config))
 
 
 @cli_section("Service")
@@ -45,18 +46,51 @@ def start_fg(ctx):
 
 @cli_section("Service")
 @click.command()
-def stop():
+@click.pass_context
+@async_command
+async def stop(ctx):
     """ TODO DOC """
     # todo
-    pass
+    echo("IN STOP")
+    project = ctx.parent.system_config["project"]
+    engine = ctx.parent.engine
+    try:
+        async for service_name, status, finished in engine.stop_project(project):
+            echo(service_name + " : " + str(status) + " : " + str(finished))
+    except Exception as err:
+        raise RiptideCliError("Error stopping the services", ctx) from err
+    echo("DONE")
+    # todo: in eigene methode + error handling und nice display
+    echo(engine.status(project, ctx.parent.system_config))
 
 
 @cli_section("Service")
 @click.command()
-def restart():
+@click.pass_context
+@async_command
+async def restart(ctx):
     """ TODO DOC """
     # todo
-    pass
+    echo("IN STOP")
+    project = ctx.parent.system_config["project"]
+    engine = ctx.parent.engine
+    try:
+        async for service_name, status, finished in engine.stop_project(project):
+            echo(service_name + " : " + str(status) + " : " + str(finished))
+    except Exception as err:
+        raise RiptideCliError("Error stopping the services", ctx) from err
+    echo("DONE")
+    echo("IN START")
+    project = ctx.parent.system_config["project"]
+    engine = ctx.parent.engine
+    try:
+        async for service_name, status, finished in engine.start_project(project):
+            echo(service_name + " : " + str(status) + " : " + str(finished))
+    except Exception as err:
+        raise RiptideCliError("Error starting the services", ctx) from err
+    echo("DONE")
+    # todo: in eigene methode + error handling und nice display
+    echo(engine.status(project, ctx.parent.system_config))
 
 
 @cli_section("Misc")

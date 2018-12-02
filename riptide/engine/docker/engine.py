@@ -4,12 +4,13 @@ from typing import Tuple, Dict, Union
 
 from docker.errors import APIError
 
+from riptide.config.document.config import Config
 from riptide.config.document.project import Project
 from riptide.engine.abstract import AbstractEngine
 from riptide.engine.docker import network, service
 from riptide.engine.docker.network import get_network_name
 from riptide.engine.docker.service import get_container_name
-from riptide.engine.results import StatusResult, StopResultStep, StartResultStep, MultiResultQueue, ResultQueue
+from riptide.engine.results import StatusResult, StartStopResultStep, MultiResultQueue, ResultQueue
 
 
 class DockerEngine(AbstractEngine):
@@ -17,7 +18,7 @@ class DockerEngine(AbstractEngine):
     def __init__(self):
         self.client = docker.from_env()
 
-    def start_project(self, project: Project) -> MultiResultQueue[StartResultStep]:
+    def start_project(self, project: Project) -> MultiResultQueue[StartStopResultStep]:
         self.ping()
         # Start network
         network.start(self.client, project["name"])
@@ -43,27 +44,34 @@ class DockerEngine(AbstractEngine):
 
         return MultiResultQueue(queues)
 
-    def stop_project(self, project: Project) -> MultiResultQueue[StopResultStep]:
+    def stop_project(self, project: Project) -> MultiResultQueue[StartStopResultStep]:
         self.ping()
         # Stop all services
         queues = {}
+        loop = asyncio.get_event_loop()
         for service_name in project["app"]["services"].keys():
             # Create queue and add to queues
             queue = ResultQueue()
             queues[queue] = service_name
             # Run stop task
-            asyncio.ensure_future(service.stop(
+            loop.run_in_executor(
+                None,
+                service.stop,
+
                 project["name"],
                 service_name,
                 self.client,
                 queue
-            ))
+            )
 
         return MultiResultQueue(queues)
 
-    def status(self, project: Project) -> Dict[str, StatusResult]:
+    def status(self, project: Project, system_config: Config) -> Dict[str, StatusResult]:
         self.ping()
-        return "todo status"  # todo
+        services = {}
+        for service_name, service_obj in project["app"]["services"].items():
+            services[service_name] = service.status(project["name"], service_name, service_obj, self.client, system_config)
+        return services
 
     def address_for(self, project: Project, service_name: str) -> Union[None, Tuple[str, int]]:
         self.ping()

@@ -39,6 +39,7 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
 
     # todo: load git repos if not fast
 
+    ctx.system_config = None
     try:
         ctx.system_config = load_config(project)
     except FileNotFoundError:

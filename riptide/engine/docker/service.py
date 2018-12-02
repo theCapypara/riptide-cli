@@ -5,9 +5,10 @@ from time import sleep
 from docker import DockerClient
 from docker.errors import NotFound, APIError
 
+from riptide.config.document.config import Config
 from riptide.config.document.service import Service
 from riptide.engine.docker.network import get_network_name
-from riptide.engine.results import ResultQueue, ResultError, StartResultStep
+from riptide.engine.results import ResultQueue, ResultError, StartStopResultStep, StatusResult
 
 
 def start(project_name: str, service_name: str, service: Service, client: DockerClient, queue: ResultQueue):
@@ -20,6 +21,7 @@ def start(project_name: str, service_name: str, service: Service, client: Docker
     On errors, tries to execute stop after updating the queue.
 
 
+    :param client:          Docker Client
     :param project_name:    Name of the project to start
     :param service_name:    Name of the service to start
     :param service:         Service object defining the service
@@ -33,7 +35,7 @@ def start(project_name: str, service_name: str, service: Service, client: Docker
     name = get_container_name(project_name, service_name)
     needs_to_be_started = False
     # 1. Check if already running
-    queue.put(StartResultStep(current_step=1, steps=None, text='Checking...'))
+    queue.put(StartStopResultStep(current_step=1, steps=None, text='Checking...'))
     try:
         container = client.containers.get(name)
         if container.status == "exited":
@@ -48,13 +50,13 @@ def start(project_name: str, service_name: str, service: Service, client: Docker
     if needs_to_be_started:
         # 2. Pulling image
         try:
-            queue.put(StartResultStep(current_step=2, steps=4, text="Pulling image... "))
+            queue.put(StartStopResultStep(current_step=2, steps=4, text="Pulling image... "))
             for line in client.api.pull(service['image'], stream=True):
                 status = json.loads(line)
                 if "progress" in status:
-                    queue.put(StartResultStep(current_step=2, steps=4, text="Pulling image... " + status["status"] + " : " + status["progress"]))
+                    queue.put(StartStopResultStep(current_step=2, steps=4, text="Pulling image... " + status["status"] + " : " + status["progress"]))
                 else:
-                    queue.put(StartResultStep(current_step=2, steps=4, text="Pulling image... " + status["status"]))
+                    queue.put(StartStopResultStep(current_step=2, steps=4, text="Pulling image... " + status["status"]))
         except APIError as err:
             queue.end_with_error(ResultError("ERROR pulling image.", cause=err))
             stop(project_name, service_name, client)
@@ -70,7 +72,7 @@ def start(project_name: str, service_name: str, service: Service, client: Docker
             labels["riptide_main"] = "1"
         # TODO: post_start and pre_start commands
         # TODO: "Don't wait for start" option
-        queue.put(StartResultStep(current_step=3, steps=4, text="Starting Container..."))
+        queue.put(StartStopResultStep(current_step=3, steps=4, text="Starting Container..."))
         try:
             client.containers.run(
                 image=service["image"],
@@ -89,7 +91,7 @@ def start(project_name: str, service_name: str, service: Service, client: Docker
             stop(project_name, service_name, client)
             return
         # 4. Checking if it actually started or just crashed immediately
-        queue.put(StartResultStep(current_step=4, steps=4, text="Checking..."))
+        queue.put(StartStopResultStep(current_step=4, steps=4, text="Checking..."))
         sleep(3)
         try:
             container = client.containers.get(name)
@@ -100,9 +102,9 @@ def start(project_name: str, service_name: str, service: Service, client: Docker
         except NotFound:
             queue.end_with_error(ResultError("ERROR: Container went missing."))
             return
-        queue.put(StartResultStep(current_step=4, steps=4, text="Started!"))
+        queue.put(StartStopResultStep(current_step=4, steps=4, text="Started!"))
     else:
-        queue.put(StartResultStep(current_step=2, steps=2, text='Already started!'))
+        queue.put(StartStopResultStep(current_step=2, steps=2, text='Already started!'))
     queue.end()
 
 
@@ -120,7 +122,64 @@ def stop(project_name: str, service_name: str, client: DockerClient, queue: Resu
     :param service_name:    Name of the service to start
     :param queue:           ResultQueue to update, or None
     """
-    pass
+    name = get_container_name(project_name, service_name)
+    # 1. Check if already running
+    if queue:
+        queue.put(StartStopResultStep(current_step=1, steps=2, text='Checking...'))
+    try:
+        container = client.containers.get(name)
+        # 2. Stop
+        if queue:
+            queue.put(StartStopResultStep(current_step=2, steps=2, text='Stopping...'))
+        container.stop()
+        container.remove()
+        if queue:
+            queue.put(StartStopResultStep(current_step=2, steps=2, text='Stopped!'))
+    except NotFound:
+        if queue:
+            queue.put(StartStopResultStep(current_step=2, steps=2, text='Already stopped!'))
+    except APIError as err:
+        if queue:
+            queue.end_with_error(ResultError("ERROR checking container status.", cause=err))
+        return
+
+    if queue:
+        queue.end()
+
+
+def status(project_name: str, service_name: str, service: Service, client: DockerClient, system_config: Config):
+    # Get Container
+    name = get_container_name(project_name, service_name)
+    container_is_running = False
+    container = None
+    try:
+        container = client.containers.get(name)
+        if container.status != "exited":
+            container_is_running = True
+    except NotFound:
+        pass
+
+    if container_is_running:
+        cstatus = "starting" if container.status == "created" or container.status == "restarting" else "running"
+        proxy_url = None
+        if "port" in service:
+            if "roles" in service and "main" in service["roles"]:
+                proxy_url = "http://" + project_name + "." + system_config["proxy"]["url"]
+            else:
+                proxy_url = "http://" + project_name + "__" + service_name + "." + system_config["proxy"]["url"]
+        return StatusResult(
+            status=cstatus,
+            web=proxy_url,
+            additional_ports=None,  ## todo
+            logging=None ## todo
+        )
+    else:
+        return StatusResult(
+            status="stopped",
+            web=None,
+            additional_ports=None,
+            logging=None
+        )
 
 
 def get_container_name(project_name: str, service_name: str):

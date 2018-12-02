@@ -3,13 +3,9 @@ import janus
 from typing import Dict, NamedTuple, Union, TypeVar, Generic
 
 
-class StartResultStep(NamedTuple):
+class StartStopResultStep(NamedTuple):
     steps: Union[int, None]
     current_step: int
-    text: str
-
-
-class StopResultStep(NamedTuple):
     text: str
 
 
@@ -26,7 +22,7 @@ class LoggingEntry(NamedTuple):
 
 class StatusResult(NamedTuple):
     status: str  # stopped | running | starting
-    web: Union[str, None]  # hostname if service has a web port assigned, None otherwise
+    web: Union[str, None]  # proxy url if service has a web port assigned, None otherwise
     additional_ports: Union[AdditionalPortsEntry, None]  # if service has additional ports
     logging: Union[LoggingEntry, None]  # if service has logging defined
 

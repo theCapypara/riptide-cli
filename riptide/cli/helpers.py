@@ -61,3 +61,6 @@ def async_command(f):
         return loop.run_until_complete(f(*args, **kwargs))
 
     return update_wrapper(wrapper, f)
+
+
+TAB = '    '
