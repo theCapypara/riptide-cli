@@ -62,8 +62,8 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
             ctx.engine = load_engine(ctx.system_config["engine"])
         except NotImplementedError as ex:
             raise RiptideCliError('Unknown engine specified in configuration.', ctx) from ex
-
-    # todo: proxy restart command
+        except ConnectionError as ex:
+            raise RiptideCliError('Connection to engine failed.', ctx) from ex
 
     # todo: load/update bash integration if not fast - TODO: Update commands with hook and not generally on start!
     # todo warnings (no zsh/bash integration ready)

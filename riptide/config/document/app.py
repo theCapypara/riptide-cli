@@ -34,10 +34,12 @@ class App(YamlConfigDocument):
         if "services" in self:
             for key, servicedoc in self["services"].items():
                 self["services"][key] = load_subdocument(servicedoc, self, Service, lookup_paths)
+                self["services"][key]["$name"] = key
 
         if "commands" in self:
             for key, commanddoc in self["commands"].items():
                 self["commands"][key] = load_subdocument(commanddoc, self, Command, lookup_paths)
+                self["commands"][key]["$name"] = key
 
         return self
 

@@ -13,6 +13,7 @@ class Command(YamlConfigDocument):
         return Schema(
             {
                 Optional('$ref'): str,  # reference to other Service documents
+                Optional('$name'): str,  # Added by system during processing parent app.
                 # TODO better OR
                 Optional('image'): str,
                 Optional('command'): str,

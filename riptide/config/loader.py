@@ -1,51 +1,13 @@
 import json
 import os
 
-from appdirs import user_config_dir
 from click import echo
 
 from riptide.cli.helpers import RiptideCliError
 from riptide.config.document.config import Config
 from riptide.config.document.project import Project
+from riptide.config.files import discover_project_file, riptide_main_config_file, riptide_projects_file
 from riptide.engine.docker.engine import DockerEngine
-
-RIPTIDE_PROJECT_CONFIG_NAME = 'riptide.yml'
-
-
-def is_path_root(path):
-    real_path = os.path.realpath(path)
-    parent_real_path = os.path.realpath(os.path.join(real_path, '..'))
-    return real_path == parent_real_path
-
-
-def __discover_project_file__step(path):
-    potential_path = os.path.join(path, RIPTIDE_PROJECT_CONFIG_NAME)
-    if os.path.exists(potential_path):
-        return potential_path
-    if is_path_root(path):
-        return None
-    return __discover_project_file__step(os.path.join(path,'..'))
-
-
-def discover_project_file():
-    return __discover_project_file__step(os.getcwd())
-
-
-def riptide_assets_dir():
-    this_folder = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(this_folder, '..', '..', 'assets')
-
-
-def riptide_main_config_file():
-    return os.path.join(riptide_config_dir(), 'config.yml')
-
-
-def riptide_projects_file():
-    return os.path.join(riptide_config_dir(), 'projects.json')
-
-
-def riptide_config_dir():
-    return user_config_dir('riptide', False)
 
 
 def load_config(project_file=None):
@@ -158,7 +120,7 @@ def write_project(project, rename, ctx):
                 )
     if changed:
         projects[project['name']] = project['$path']
-        with open(riptide_projects_file(),  mode='w') as file:
+        with open(riptide_projects_file(), mode='w') as file:
             json.dump(projects, file)
     if rename:
         echo("Project reference renamed.")
