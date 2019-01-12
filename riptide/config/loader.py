@@ -42,12 +42,12 @@ def load_config(project_file=None):
     if project_path is not None:
         try:
             project_config = Project.from_yaml(project_path)
+            project_config["$path"] = project_path
 
             # TODO: Translate repos. Da sollen später git repos stehen, nicht direkt pfade.
             project_config.resolve_and_merge_references(system_config["repos"])
 
             system_config["project"] = project_config
-            system_config["project"]["$path"] = project_path
         except FileNotFoundError:
             pass
 

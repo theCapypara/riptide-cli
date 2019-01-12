@@ -32,9 +32,13 @@ def process_config(config, service):
     )
 
     with open(config["$source"], 'r') as stream:
-        processed_file = service.process_vars_for(str(stream))
+        processed_file = service.process_vars_for(stream.read())
 
-    os.makedirs(processed_config_folder)
+    try:
+        os.makedirs(processed_config_folder)
+    except FileExistsError:
+        pass # Already exists, we don't care.
+
     with open(target_file, 'w') as f:
         f.write(processed_file)
 

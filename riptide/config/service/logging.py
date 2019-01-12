@@ -24,8 +24,8 @@ def create_logging_path(service):
     path = _get_log_path(service)
     try:
         os.makedirs(path)
-    except:
-        pass
+    except FileExistsError:
+        pass # Already exists, we don't care.
 
 
 def get_logging_path_for(service, log_name):

@@ -17,12 +17,15 @@ class Service(YamlConfigDocument):
         """ Load the absolute path of the config documents specified in config[]["from"]"""
         if self.path:
             folder_of_self = os.path.dirname(self.path)
-            if "config" in self:
-                for config in self["config"]:
-                    # TODO: Currently doesn't allow . or os.sep at the beginning for security reasons.
-                    if config["from"].startswith(".") or config["from"].startswith(os.sep):
-                        raise ValueError("Config 'from' items in services may not start with . or %s." % os.sep)
-                    config["$source"] = os.path.join(folder_of_self, config["from"])
+        else:
+            folder_of_self = self.get_project().folder()
+
+        if "config" in self:
+            for config in self["config"]:
+                # TODO: Currently doesn't allow . or os.sep at the beginning for security reasons.
+                if config["from"].startswith(".") or config["from"].startswith(os.sep):
+                    raise ValueError("Config 'from' items in services may not start with . or %s." % os.sep)
+                config["$source"] = os.path.join(folder_of_self, config["from"])
 
         if "run_as_root" not in self:
             self.doc["run_as_root"] = False
