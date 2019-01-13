@@ -71,9 +71,9 @@ async def stop(ctx):
 async def restart(ctx):
     """ TODO DOC """
     # todo
-    echo("IN STOP")
     project = ctx.parent.system_config["project"]
     engine = ctx.parent.engine
+    echo("IN STOP")
     try:
         async for service_name, status, finished in engine.stop_project(project):
             echo(service_name + " : " + str(status) + " : " + str(finished))
@@ -81,8 +81,6 @@ async def restart(ctx):
         raise RiptideCliError("Error stopping the services", ctx) from err
     echo("DONE")
     echo("IN START")
-    project = ctx.parent.system_config["project"]
-    engine = ctx.parent.engine
     try:
         async for service_name, status, finished in engine.start_project(project):
             echo(service_name + " : " + str(status) + " : " + str(finished))

@@ -6,7 +6,8 @@ from click import echo
 from riptide.cli.helpers import RiptideCliError
 from riptide.config.document.config import Config
 from riptide.config.document.project import Project
-from riptide.config.files import discover_project_file, riptide_main_config_file, riptide_projects_file
+from riptide.config.files import discover_project_file, riptide_main_config_file, riptide_projects_file, \
+    riptide_ports_config_file
 from riptide.engine.docker.engine import DockerEngine
 
 

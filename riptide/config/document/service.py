@@ -9,9 +9,21 @@ from riptide.config.files import CONTAINER_SRC_PATH
 from riptide.config.service.config_files import *
 from riptide.config.service.logging import *
 
-
 # todo: validate actual schema values -> better schema | ALL documents
+from riptide.config.service.ports import get_additional_port
+
+
 class Service(YamlConfigDocument):
+
+    def __init__(
+            self,
+            document: dict,
+            path: str = None,
+            parent: 'YamlConfigDocument' = None,
+            already_loaded_docs: List[str] = None
+    ):
+        super().__init__(document, path, parent, already_loaded_docs)
+        self.loaded_port_mappings = None
 
     def _initialize_data(self):
         """ Load the absolute path of the config documents specified in config[]["from"]"""
@@ -38,6 +50,15 @@ class Service(YamlConfigDocument):
 
         if "roles" not in self:
             self.doc["roles"] = []
+
+    def before_start(self):
+        """Load data required for service start, called by riptide_project_start_ctx()"""
+        # Collect ports
+        project = self.get_project()
+        self.loaded_port_mappings = {}
+        if "additional_ports" in self:
+            for port_request in self["additional_ports"]:
+                self.loaded_port_mappings[port_request["container"]] = get_additional_port(project, self, port_request["host_start"])
 
     @classmethod
     def header(cls) -> str:
@@ -184,12 +205,9 @@ class Service(YamlConfigDocument):
         Returned format is {port_service1: port_host1, port_service2: port_host2}
         :return:
         """
-        project = self.get_project()
-        ports = {}
-        if "additional_ports" in self:
-            for port_request in self["additional_ports"]:
-                ports[port_request["container"]] = get_additional_port(project, self, port_request["host_start"])
-        return ports
+        # This is already loaded in before_start. Make sure to use riptide_start_project_ctx
+        # when starting if this is None
+        return self.loaded_port_mappings
 
     def get_db_driver(self):
         """TODO"""

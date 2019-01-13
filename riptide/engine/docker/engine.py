@@ -10,6 +10,7 @@ from riptide.engine.abstract import AbstractEngine
 from riptide.engine.docker import network, service
 from riptide.engine.docker.network import get_network_name
 from riptide.engine.docker.service import get_container_name
+from riptide.engine.project_start_ctx import riptide_start_project_ctx
 from riptide.engine.results import StatusResult, StartStopResultStep, MultiResultQueue, ResultQueue
 
 
@@ -20,28 +21,29 @@ class DockerEngine(AbstractEngine):
         self.ping()
 
     def start_project(self, project: Project) -> MultiResultQueue[StartStopResultStep]:
-        # Start network
-        network.start(self.client, project["name"])
+        with riptide_start_project_ctx(project):
+            # Start network
+            network.start(self.client, project["name"])
 
-        # Start all services
-        queues = {}
-        loop = asyncio.get_event_loop()
-        for service_obj in project["app"]["services"].values():
-            # Create queue and add to queues
-            queue = ResultQueue()
-            queues[queue] = service_obj["$name"]
-            # Run start task
-            loop.run_in_executor(
-                None,
-                service.start,
+            # Start all services
+            queues = {}
+            loop = asyncio.get_event_loop()
+            for service_obj in project["app"]["services"].values():
+                # Create queue and add to queues
+                queue = ResultQueue()
+                queues[queue] = service_obj["$name"]
+                # Run start task
+                loop.run_in_executor(
+                    None,
+                    service.start,
 
-                project["name"],
-                service_obj,
-                self.client,
-                queue
-            )
+                    project["name"],
+                    service_obj,
+                    self.client,
+                    queue
+                )
 
-        return MultiResultQueue(queues)
+            return MultiResultQueue(queues)
 
     def stop_project(self, project: Project) -> MultiResultQueue[StartStopResultStep]:
         # Stop all services

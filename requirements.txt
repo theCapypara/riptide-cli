@@ -7,3 +7,4 @@ configcrunch==0.1
 docker==3.5.1
 appdirs==1.4.3
 janus==0.4.0
+psutil==5.4.8
