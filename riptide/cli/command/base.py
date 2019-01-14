@@ -4,7 +4,8 @@ import yaml
 from click import echo, style
 from shutil import copyfile
 
-from riptide.cli.helpers import warn, cli_section, TAB
+from riptide.cli.helpers import warn, cli_section
+from riptide.cli.lifecycle import status_project
 from riptide.config.files import riptide_assets_dir, riptide_main_config_file, riptide_config_dir, RIPTIDE_PROJECT_CONFIG_NAME
 
 COMMAND_CREATE_CONFIG_USER = 'config:create:user'
@@ -88,17 +89,4 @@ def config_create_project(force, edit):
 @click.pass_context
 def status(ctx):
     """ TODO DOC """
-    echo("Status:")
-    engine = ctx.parent.engine
-    system_config = ctx.parent.system_config
-    project = None
-    if system_config is None:
-        echo(TAB + style('No system configuration found.', fg='yellow'))
-    elif "project" in system_config:
-        project = system_config["project"]
-    if project is None:
-        echo(TAB + style('No project found.', fg='yellow'))
-    else:
-        # todo: in eigene methode + error handling und nice display
-        echo(engine.status(project, ctx.parent.system_config))
-    pass
+    status_project(ctx)

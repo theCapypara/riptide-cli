@@ -1,7 +1,10 @@
 import click
 from click import echo, clear
+from tqdm import tqdm
 
 from riptide.cli.helpers import cli_section, async_command, RiptideCliError
+from riptide.cli.command.base import status as status_cmd
+from riptide.cli.lifecycle import start_project, stop_project
 
 
 def load(ctx):
@@ -22,18 +25,7 @@ def load(ctx):
 @async_command
 async def start(ctx):
     """ TODO DOC """
-    # todo
-    echo("IN START")
-    project = ctx.parent.system_config["project"]
-    engine = ctx.parent.engine
-    try:
-        async for service_name, status, finished in engine.start_project(project):
-            echo(service_name + " : " + str(status) + " : " + str(finished))
-    except Exception as err:
-        raise RiptideCliError("Error starting the services", ctx) from err
-    echo("DONE")
-    # todo: in eigene methode + error handling und nice display
-    echo(engine.status(project, ctx.parent.system_config))
+    await start_project(ctx)
 
 
 @cli_section("Service")
@@ -50,19 +42,7 @@ def start_fg(ctx):
 @async_command
 async def stop(ctx):
     """ TODO DOC """
-    # todo
-    echo("IN STOP")
-    project = ctx.parent.system_config["project"]
-    engine = ctx.parent.engine
-    try:
-        async for service_name, status, finished in engine.stop_project(project):
-            echo(service_name + " : " + str(status) + " : " + str(finished))
-    except Exception as err:
-        raise RiptideCliError("Error stopping the services", ctx) from err
-    echo("DONE")
-    # todo: in eigene methode + error handling und nice display
-    echo(engine.status(project, ctx.parent.system_config))
-
+    await stop_project(ctx)
 
 @cli_section("Service")
 @click.command()
@@ -70,25 +50,9 @@ async def stop(ctx):
 @async_command
 async def restart(ctx):
     """ TODO DOC """
-    # todo
-    project = ctx.parent.system_config["project"]
-    engine = ctx.parent.engine
-    echo("IN STOP")
-    try:
-        async for service_name, status, finished in engine.stop_project(project):
-            echo(service_name + " : " + str(status) + " : " + str(finished))
-    except Exception as err:
-        raise RiptideCliError("Error stopping the services", ctx) from err
-    echo("DONE")
-    echo("IN START")
-    try:
-        async for service_name, status, finished in engine.start_project(project):
-            echo(service_name + " : " + str(status) + " : " + str(finished))
-    except Exception as err:
-        raise RiptideCliError("Error starting the services", ctx) from err
-    echo("DONE")
-    # todo: in eigene methode + error handling und nice display
-    echo(engine.status(project, ctx.parent.system_config))
+    await stop_project(ctx, show_status=False)
+    echo()
+    await start_project(ctx)
 
 
 @cli_section("Misc")

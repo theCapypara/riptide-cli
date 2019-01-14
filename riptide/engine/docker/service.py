@@ -226,7 +226,7 @@ def stop(project_name: str, service_name: str, client: DockerClient, queue: Resu
         container.stop()
         container.remove()
         if queue:
-            queue.put(StartStopResultStep(current_step=2, steps=3, text='Stopped!'))
+            queue.put(StartStopResultStep(current_step=3, steps=3, text='Stopped!'))
     except NotFound:
         if queue:
             queue.put(StartStopResultStep(current_step=2, steps=2, text='Already stopped!'))
