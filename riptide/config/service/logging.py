@@ -10,6 +10,7 @@ PATH_OF_COMMAND_OUTPUT_LOGFILES_IN_CONTAINER = '/cmd_logs'
 LOGGING_CONTAINER_STDOUT = '/riptide_stdout'
 LOGGING_CONTAINER_STDERR = '/riptide_stderr'
 
+
 def _get_log_path(service):
     project = service.get_project()
     return os.path.join(
@@ -34,6 +35,7 @@ def get_logging_path_for(service, log_name):
     filename = os.path.join(path, remove_all_special_chars(log_name) + '.log')
     with open(filename, 'a'):
         pass # only open it to create it if it doesn't exist
+    os.chmod(filename, 0o666)
     return filename
 
 

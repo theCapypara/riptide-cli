@@ -51,7 +51,6 @@ async def stop(ctx):
 async def restart(ctx):
     """ TODO DOC """
     await stop_project(ctx, show_status=False)
-    echo()
     await start_project(ctx)
 
 

@@ -5,12 +5,14 @@ from typing import List
 from schema import Schema, Optional
 
 from configcrunch import YamlConfigDocument
+from configcrunch.abstract import variable_helper
 from riptide.config.files import CONTAINER_SRC_PATH
 from riptide.config.service.config_files import *
 from riptide.config.service.logging import *
 
 # todo: validate actual schema values -> better schema | ALL documents
 from riptide.config.service.ports import get_additional_port
+from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
 
 
 class Service(YamlConfigDocument):
@@ -81,12 +83,7 @@ class Service(YamlConfigDocument):
                 },
                 Optional('pre_start'): [str],
                 Optional('post_start'): [str],
-                Optional('environment'): [
-                    {
-                        'name': str,
-                        'value': str
-                    }
-                ],
+                Optional('environment'): {str: str},
                 Optional('config'): [
                     {
                         'from': str,
@@ -107,7 +104,7 @@ class Service(YamlConfigDocument):
                 Optional('additional_volumes'): [
                     {
                         'host': str,
-                        'container': int,
+                        'container': str,
                         Optional('mode'): str  # default: rw - can be rw/ro.
                     }
                 ],
@@ -151,7 +148,7 @@ class Service(YamlConfigDocument):
         # config
         if "config" in self:
             for config in self["config"]:
-                volumes[process_config(config, self)] = {'bind': config["to"], 'mode': 'ro'}
+                volumes[process_config(config, self)] = {'bind': config["to"], 'mode': 'rw'}  # todo: ro default
 
         # logging
         if "logging" in self:
@@ -177,6 +174,10 @@ class Service(YamlConfigDocument):
         # additional_volumes
         if "additional_volumes" in self:
             for vol in self["additional_volumes"]:
+                # Relative paths
+                if not os.path.isabs(vol["host"]):
+                    vol["host"] = os.path.join(project.folder(), vol["host"])
+
                 mode = vol["mode"] if "mode" in vol else "rw"
                 volumes[vol["host"]] = {'bind': vol["container"], 'mode': mode}
 
@@ -191,8 +192,8 @@ class Service(YamlConfigDocument):
         """
         env = {}
         if "environment" in self:
-            for env_entry in self["environment"]:
-                env[env_entry["name"]] = env_entry["value"]
+            for name, value in self["environment"].items():
+                env[name] = value
         return env
 
     def collect_ports(self):
@@ -212,3 +213,38 @@ class Service(YamlConfigDocument):
     def get_db_driver(self):
         """TODO"""
         pass
+
+    @variable_helper
+    def volume_path(self):
+        path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'data', self.get_project()['name'], self["$name"])
+        os.makedirs(path, exist_ok=True)
+        return path
+
+    @variable_helper
+    def get_working_directory(self):
+        workdir = None if "src" not in self["roles"] else CONTAINER_SRC_PATH
+        if "working_directory" in self:
+            if PurePosixPath(self["working_directory"]).is_absolute():
+                return self["working_directory"]
+            elif workdir is not None:
+                return str(PurePosixPath(workdir).joinpath(self["working_directory"]))
+        return workdir
+
+    @variable_helper
+    def domain(self):
+        if "main" in self["roles"]:
+            return self.get_project()["name"] + "." + self.parent_doc.parent_doc.parent_doc["proxy"]["url"]
+        return self.get_project()["name"] + "__" + self["$name"] + "." + self.parent_doc.parent_doc.parent_doc["proxy"]["url"]
+
+    @variable_helper
+    def os_user(self):
+        return str(os.getuid())
+
+    @variable_helper
+    def os_group(self):
+        return str(os.getgid())
+
+    @variable_helper
+    def host_address(self):
+        """Returns the hostname that the host system is reachable under"""
+        return RIPTIDE_HOST_HOSTNAME

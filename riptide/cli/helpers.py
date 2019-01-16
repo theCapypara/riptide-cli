@@ -26,7 +26,7 @@ class RiptideCliError(ClickException):
         if file is None:
             file = get_text_stderr()
         if verbose:
-            echo(style(traceback.format_exc(), fg='red'), file=file)
+            echo(style(traceback.format_exc(), bg='red'), file=file)
         else:
             echo(style(self.message, bg='red', fg='white', bold=True), file=file)
             if self.__context__ is not None:

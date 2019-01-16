@@ -1,3 +1,5 @@
+from time import sleep
+
 from click import echo, style
 from tqdm import tqdm
 
@@ -5,6 +7,7 @@ from riptide.cli.helpers import RiptideCliError, TAB
 
 
 PROGRESS_TEXT_WIDTH = 35
+ERROR_TEXT_WIDTH = 45
 
 
 def _build_progress_bars(project):
@@ -12,12 +15,15 @@ def _build_progress_bars(project):
 
     longest_service_name_len = len(max(project["app"]["services"].keys(), key=len))
 
+    i = 0
     for service_name in project["app"]["services"]:
         progress_bars[service_name] = tqdm(
-            total=10,
+            total=1,
+            position=i,
             bar_format="{desc}{n_fmt}/{total_fmt}|{bar}| {postfix[0]}",
             postfix=["...".ljust(PROGRESS_TEXT_WIDTH)]
         )
+        i += 1
         progress_bars[service_name].set_description(service_name.ljust(longest_service_name_len))
     return progress_bars
 
@@ -26,8 +32,9 @@ def _handle_progress_bar(service_name, status, finished, progress_bars, errors):
     if finished:
         if status:
             # error
-            errors.append({"service": service_name, "error": status})
-            progress_bars[service_name].bar_format = "{desc}: ERROR!"
+            errors.append({"service": service_name, "error": status.cause if status.cause else status})
+            msg = (status.message[:ERROR_TEXT_WIDTH-3] + '...') if len(status.message) > ERROR_TEXT_WIDTH-3 else status.message.ljust(ERROR_TEXT_WIDTH)
+            progress_bars[service_name].bar_format = "{desc}" + msg
             progress_bars[service_name].refresh()
         else:
             # no error
@@ -70,8 +77,8 @@ async def start_project(ctx, show_status=True):
 
     for bar in progress_bars.values():
         bar.close()
+        echo()
 
-    echo()
     _display_errors(errors)
 
     if show_status:
@@ -95,10 +102,10 @@ async def stop_project(ctx, show_status=True):
     except Exception as err:
         raise RiptideCliError("Error stopping the services", ctx) from err
 
-    for bar in progress_bars.values():
+    for bar in reversed(list(progress_bars.values())):
         bar.close()
+        echo()
 
-    echo()
     _display_errors(errors)
 
     if show_status:

@@ -6,7 +6,7 @@ from docker import DockerClient
 from docker.errors import NotFound, APIError, ContainerError
 
 from riptide.config.document.config import Config
-from riptide.config.document.service import Service
+from riptide.config.document.service import Service, PurePosixPath
 from riptide.config.files import riptide_assets_dir, CONTAINER_SRC_PATH
 from riptide.engine.docker.network import get_network_name
 from riptide.engine.results import ResultQueue, ResultError, StartStopResultStep, StatusResult
@@ -16,6 +16,8 @@ NO_START_STEPS = 6
 ENTRYPOINT_CONTAINER_PATH = '/entrypoint_riptide.sh'
 
 EENV_DONT_RUN_CMD = "RIPTIDE__DOCKER_DONT_RUN_CMD"
+EENV_USER = "RIPTIDE__DOCKER_USER"
+EENV_GROUP = "RIPTIDE__DOCKER_GROUP"
 EENV_ORIGINAL_ENTRYPOINT = "RIPTIDE__DOCKER_ORIGINAL_ENTRYPOINT"
 EENV_COMMAND_LOG_PREFIX = "RIPTIDE__DOCKER_CMD_LOGGING_"
 
@@ -82,34 +84,41 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
         if "roles" in service and "main" in service["roles"]:
             labels["riptide_main"] = "1"
 
-        # Collect volumes
-        volumes = service.collect_volumes()
-        # Add custom entrypoint as volume
-        entrypoint_script = os.path.join(riptide_assets_dir(), 'engine', 'docker', 'entrypoint.sh')
-        volumes[entrypoint_script] = {'bind': ENTRYPOINT_CONTAINER_PATH, 'mode': 'ro'}
+        try:
+            # Collect volumes
+            volumes = service.collect_volumes()
+            # Add custom entrypoint as volume
+            entrypoint_script = os.path.join(riptide_assets_dir(), 'engine', 'docker', 'entrypoint.sh')
+            volumes[entrypoint_script] = {'bind': ENTRYPOINT_CONTAINER_PATH, 'mode': 'ro'}
 
-        # Collect environment variables
-        environment = service.collect_environment()
-        # The original entrypoint of the image is replaced with
-        # this custom entrypoint script, which may call the original entrypoint
-        # if present
-        # This adds configuration for this to the script.
-        image_config = client.api.inspect_image(service["image"])["Config"]
-        environment.update(parse_entrypoint(image_config["Entrypoint"]))
-        # All command logging commands are added as environment variables for the
-        # riptide entrypoint
-        if "logging" in service and "commands" in service["logging"]:
-            for cmdname, command in service["logging"]["commands"].items():
-                environment[EENV_COMMAND_LOG_PREFIX + cmdname] = command
+            # Collect environment variables
+            environment = service.collect_environment()
+            # The original entrypoint of the image is replaced with
+            # this custom entrypoint script, which may call the original entrypoint
+            # if present
+            # This adds configuration for this to the script.
+            image_config = client.api.inspect_image(service["image"])["Config"]
+            environment.update(parse_entrypoint(image_config["Entrypoint"]))
+            # All command logging commands are added as environment variables for the
+            # riptide entrypoint
+            if "logging" in service and "commands" in service["logging"]:
+                for cmdname, command in service["logging"]["commands"].items():
+                    environment[EENV_COMMAND_LOG_PREFIX + cmdname] = command
 
-        # Collect (and process!) additional_ports
-        ports = service.collect_ports()
+            # Collect (and process!) additional_ports
+            ports = service.collect_ports()
 
-        # Change user?
-        user_param = None if service["run_as_root"] else user
+            # Change user?
+            user_param = None if service["run_as_root"] else user
+            if user_param:
+                environment[EENV_USER] = user
+                environment[EENV_GROUP] = user_group
 
-        # If src role is set, change workdir
-        workdir = None if "src" not in service["roles"] else CONTAINER_SRC_PATH
+            # If src role is set, change workdir
+            workdir = service.get_working_directory()
+        except Exception as ex:
+            queue.end_with_error(ResultError("ERROR preparing container.", cause=ex))
+            return
 
         # 3. Run pre start commands
         cmd_no = -1
@@ -117,6 +126,16 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
             cmd_no = cmd_no + 1
             queue.put(StartStopResultStep(current_step=3, steps=NO_START_STEPS, text="Pre Start: " + cmd))
             try:
+                # Remove first, just to be sure
+                try:
+                    client.containers.get(name + "__pre_start" + str(cmd_no)).stop()
+                except APIError:
+                    pass
+                try:
+                    client.containers.get(name + "__pre_start" + str(cmd_no)).remove()
+                except APIError:
+                    pass
+
                 # TODO: Keyboard interrupt support
                 client.containers.run(
                     image=service["image"],
@@ -124,32 +143,30 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
                     detach=False,
                     remove=True,
                     name=name + "__pre_start" + str(cmd_no),
-                    network=get_network_name(project_name),
                     user=user_param,
                     group_add=[user_group],
                     volumes=volumes,
                     environment=environment,
                     ports=ports,
+                    network=get_network_name(project_name),
                     working_dir=workdir
                 )
             except (APIError, ContainerError) as err:
-                queue.end_with_error(ResultError("ERROR running pre start command '" + cmd + "' container.", cause=err))
+                queue.end_with_error(ResultError("ERROR running pre start command '" + cmd + "'.", cause=err))
                 stop(project_name, service["$name"], client)
                 return
 
         # 4. Starting the container
         queue.put(StartStopResultStep(current_step=4, steps=NO_START_STEPS, text="Starting Container..."))
 
-        # TODO: Workdir auf /src wenn src Rolle
         try:
-            client.containers.run(
+            container = client.containers.run(
                 image=service["image"],
-                entrypoint=ENTRYPOINT_CONTAINER_PATH,
-                command=image_config["Cmd"],
+                entrypoint=[ENTRYPOINT_CONTAINER_PATH],
+                command=image_config["Cmd"] if "command" not in service else service["command"],
                 detach=True,
                 name=name,
-                network=get_network_name(project_name),
-                user=user_param,
+                # user is always root, but EENV_USER may be used to run command with another user using the entrypoint
                 group_add=[user_group],
                 hostname=service["$name"],
                 labels=labels,
@@ -158,9 +175,10 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
                 ports=ports,
                 working_dir=workdir
             )
+            # Add container to network
+            client.networks.get(get_network_name(project_name)).connect(container, aliases=[service["$name"]])
         except (APIError, ContainerError) as err:
             queue.end_with_error(ResultError("ERROR starting container.", cause=err))
-            stop(project_name, service["$name"], client)
             return
 
         # 4b. Checking if it actually started or just crashed immediately
@@ -169,7 +187,8 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
         try:
             container = client.containers.get(name)
             if container.status == "exited":
-                queue.end_with_error(ResultError("ERROR: Container crashed.", details=container.logs().decode("utf-8")))
+                extra = " Try run_as_root': true" if user_param else ""
+                queue.end_with_error(ResultError("ERROR: Container crashed." + extra, details=container.logs().decode("utf-8")))
                 container.remove()
                 return
         except NotFound:
@@ -186,10 +205,11 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
                 container.exec_run(
                     cmd="/bin/sh -c '" + cmd + "'",
                     detach=False,
+                    tty=True,
                     user=user_param
                 )
             except (APIError, ContainerError) as err:
-                queue.end_with_error(ResultError("ERROR running post start command '" + cmd + "' container.", cause=err))
+                queue.end_with_error(ResultError("ERROR running post start command '" + cmd + "'.", cause=err))
                 stop(project_name, service["$name"], client)
                 return
 

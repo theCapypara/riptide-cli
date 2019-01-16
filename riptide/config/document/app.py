@@ -23,7 +23,7 @@ class App(YamlConfigDocument):
                 'services': {
                     str: DocReference(Service)
                 },
-                'commands': {
+                Optional('commands'): {
                     str: DocReference(Command)
                 }
             }
@@ -44,15 +44,8 @@ class App(YamlConfigDocument):
         return self
 
     @variable_helper
-    def get_service_name_by_role(self, role_name):
-        """ TODO """
-        for service_name, service in self["services"].items():
-            if "roles" in service and role_name in service["roles"]:
-                return service_name
-
-    @variable_helper
     def get_service_by_role(self, role_name):
         """ TODO """
-        for service_name, service in self["services"].values():
+        for service in self["services"].values():
             if "roles" in service and role_name in service["roles"]:
                 return service

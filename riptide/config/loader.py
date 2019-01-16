@@ -41,6 +41,7 @@ def load_config(project_file=None):
         del system_config["project"]
 
     if project_path is not None:
+        project_path = os.path.abspath(project_path)
         try:
             project_config = Project.from_yaml(project_path)
             project_config["$path"] = project_path
@@ -49,6 +50,7 @@ def load_config(project_file=None):
             project_config.resolve_and_merge_references(system_config["repos"])
 
             system_config["project"] = project_config
+            project_config.parent_doc = system_config
         except FileNotFoundError:
             pass
 
