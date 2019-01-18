@@ -55,12 +55,11 @@ def get_additional_port(project, service, start_port):
     to use.
     While assigning, ports that are used by another program (TCP) are also skipped.
     """
+    existing = get_existing_port_mapping(project, service, start_port, load=False)
+    if existing is not None:
+        return existing
+
     port_cfg = PortsConfig.get()
-    if project["name"] in port_cfg["requests"] and \
-       service["$name"] in port_cfg["requests"][project["name"]] and \
-       str(start_port) in port_cfg["requests"][project["name"]][service["$name"]]:
-        # A mapping already exists
-        return port_cfg["requests"][project["name"]][service["$name"]][str(start_port)]
 
     port_found = False
     current_port = start_port
@@ -77,6 +76,18 @@ def get_additional_port(project, service, start_port):
             port_cfg["ports"][str(current_port)] = True
             return current_port
         current_port += 1
+
+
+def get_existing_port_mapping(project, service, start_port, load=True):
+    if load:
+        PortsConfig.load()
+    port_cfg = PortsConfig.get()
+    if project["name"] in port_cfg["requests"] and \
+       service["$name"] in port_cfg["requests"][project["name"]] and \
+       str(start_port) in port_cfg["requests"][project["name"]][service["$name"]]:
+        # A mapping already exists
+        return port_cfg["requests"][project["name"]][service["$name"]][str(start_port)]
+    return None
 
 
 class PortsConfig:

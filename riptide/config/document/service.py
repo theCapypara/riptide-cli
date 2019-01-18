@@ -216,7 +216,7 @@ class Service(YamlConfigDocument):
 
     @variable_helper
     def volume_path(self):
-        path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'data', self.get_project()['name'], self["$name"])
+        path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'data', self["$name"])
         os.makedirs(path, exist_ok=True)
         return path
 

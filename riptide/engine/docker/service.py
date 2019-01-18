@@ -9,7 +9,7 @@ from riptide.config.document.config import Config
 from riptide.config.document.service import Service, PurePosixPath
 from riptide.config.files import riptide_assets_dir, CONTAINER_SRC_PATH
 from riptide.engine.docker.network import get_network_name
-from riptide.engine.results import ResultQueue, ResultError, StartStopResultStep, StatusResult
+from riptide.engine.results import ResultQueue, ResultError, StartStopResultStep
 
 NO_START_STEPS = 6
 
@@ -267,7 +267,6 @@ def status(project_name: str, service: Service, client: DockerClient, system_con
     # Get Container
     name = get_container_name(project_name, service["$name"])
     container_is_running = False
-    container = None
     try:
         container = client.containers.get(name)
         if container.status != "exited":
@@ -275,27 +274,7 @@ def status(project_name: str, service: Service, client: DockerClient, system_con
     except NotFound:
         pass
 
-    if container_is_running:
-        cstatus = "starting" if container.status == "created" or container.status == "restarting" else "running"
-        proxy_url = None
-        if "port" in service:
-            if "roles" in service and "main" in service["roles"]:
-                proxy_url = "http://" + project_name + "." + system_config["proxy"]["url"]
-            else:
-                proxy_url = "http://" + project_name + "__" + service["$name"] + "." + system_config["proxy"]["url"]
-        return StatusResult(
-            status=cstatus,
-            web=proxy_url,
-            additional_ports=None,  ## todo
-            logging=None ## todo
-        )
-    else:
-        return StatusResult(
-            status="stopped",
-            web=None,
-            additional_ports=None,
-            logging=None
-        )
+    return container_is_running
 
 
 def get_container_name(project_name: str, service_name: str):

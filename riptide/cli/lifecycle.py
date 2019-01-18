@@ -5,7 +5,7 @@ from click import echo, style
 from tqdm import tqdm
 
 from riptide.cli.helpers import RiptideCliError, TAB
-
+from riptide.engine.status import status_for
 
 PROGRESS_TEXT_WIDTH = 35
 ERROR_TEXT_WIDTH = 45
@@ -132,6 +132,19 @@ def status_project(ctx):
     if project is None:
         echo(TAB + style('No project found.', fg='yellow'))
     else:
-        # todo: in eigene methode + error handling und nice display
-        echo(engine.status(project, ctx.parent.system_config))
-    pass
+        for name, status in status_for(project, engine, ctx.parent.system_config).items():
+            echo(TAB + style(name + ':', fg='green' if status.running else 'red', bold=True))
+            if not status.running:
+                echo(TAB + TAB + 'Not running.')
+            else:
+                echo(TAB + TAB + 'Running.')
+                if status.web:
+                    echo(TAB + TAB + 'Access via ' + style(status.web, bold=True))
+                if len(status.additional_ports) > 0:
+                    echo(TAB + TAB + 'Additional Ports:')
+                    for port_data in status.additional_ports:
+                        echo(TAB + TAB + TAB + 'Port %s (%d) reachable on localhost:%s' %
+                             (style(port_data.title, bold=True), port_data.container, style(str(port_data.host), bold=True))
+                         )
+
+            echo()

@@ -1,6 +1,10 @@
-from schema import Schema, Optional
+import os
+
+from schema import Schema, Optional, Or
 
 from configcrunch import YamlConfigDocument
+from configcrunch.abstract import variable_helper
+from riptide.config.files import get_project_meta_folder, CONTAINER_SRC_PATH
 
 
 class Command(YamlConfigDocument):
@@ -11,13 +15,76 @@ class Command(YamlConfigDocument):
 
     def schema(self) -> Schema:
         return Schema(
-            {
+            Or({
                 Optional('$ref'): str,  # reference to other Service documents
                 Optional('$name'): str,  # Added by system during processing parent app.
-                # TODO better OR
+
                 Optional('image'): str,
                 Optional('command'): str,
+                Optional('additional_volumes'): [
+                    {
+                        'host': str,
+                        'container': str,
+                        Optional('mode'): str  # default: rw - can be rw/ro.
+                    }
+                ]
+            }, {
+                Optional('$ref'): str,  # reference to other Service documents
+                Optional('$name'): str,  # Added by system during processing parent app.
 
                 Optional('aliases'): str
-            }
+            })
         )
+
+    def get_project(self):
+        try:
+            return self.parent_doc.parent_doc
+        except Exception as ex:
+            raise IndexError("Expected command to have a project assigned") from ex
+
+    def collect_volumes(self):
+        """
+        Collect volume mappings that this command should be getting when running.
+        Volumes are built from following sources:
+        - Source code is mounted as volume if role "src" is set
+        - additional_volumes are added.
+        """
+        project = self.get_project()
+        volumes = {}
+
+        # source code
+        volumes[project.src_folder()] = {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'}
+
+        # additional_volumes
+        # todo: merge with services logic
+        if "additional_volumes" in self:
+            for vol in self["additional_volumes"]:
+                # Relative paths
+                if not os.path.isabs(vol["host"]):
+                    vol["host"] = os.path.join(project.folder(), vol["host"])
+
+                mode = vol["mode"] if "mode" in vol else "rw"
+                volumes[vol["host"]] = {'bind': vol["container"], 'mode': mode}
+
+        return volumes
+
+    def collect_environment(self):
+        """
+        Collect environment variables from the "environment" entry in the service
+        configuration.
+        # TODO: This propably is really not the best idea
+        The passed environment is simple all of the riptide's process environment,
+        minus some important meta-variables such as USERNAME and PATH.
+        :return:
+        """
+        env = os.environ.copy()
+        keys_to_remove = {"PATH", "PS1", "  USERNAME", "PWD", "SHELL", "HOME"}.intersection(set(env.keys()))
+        for key in keys_to_remove:
+            del env[key]
+        return env
+
+    @variable_helper
+    def volume_path(self):
+        path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'cmd_data', self["$name"])
+        os.makedirs(path, exist_ok=True)
+        return path

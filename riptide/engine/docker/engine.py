@@ -1,23 +1,19 @@
 import asyncio
-import os
-import pty
-import sys
 
 import docker
 from typing import Tuple, Dict, Union, List
 
-import subprocess
-from docker.errors import APIError, NotFound
+from docker.errors import APIError
 
 from riptide.config.document.config import Config
 from riptide.config.document.project import Project
-from riptide.config.files import CONTAINER_SRC_PATH, get_current_relative_project_path, get_current_relative_src_path
-from riptide.engine.abstract import AbstractEngine, ExecError
+from riptide.engine.abstract import AbstractEngine
 from riptide.engine.docker import network, service
 from riptide.engine.docker.network import get_network_name
 from riptide.engine.docker.service import get_container_name
 from riptide.engine.project_start_ctx import riptide_start_project_ctx
-from riptide.engine.results import StatusResult, StartStopResultStep, MultiResultQueue, ResultQueue, ResultError
+from riptide.engine.results import StartStopResultStep, MultiResultQueue, ResultQueue, ResultError
+from riptide.engine.docker.cmd_exec import service_exec, cmd
 
 
 class DockerEngine(AbstractEngine):
@@ -77,7 +73,7 @@ class DockerEngine(AbstractEngine):
 
         return MultiResultQueue(queues)
 
-    def status(self, project: Project, system_config: Config) -> Dict[str, StatusResult]:
+    def status(self, project: Project, system_config: Config) -> Dict[str, bool]:
         services = {}
         for service_name, service_obj in project["app"]["services"].items():
             services[service_name] = service.status(project["name"], service_obj, self.client, system_config)
@@ -98,35 +94,13 @@ class DockerEngine(AbstractEngine):
         return ip, port
 
     def cmd(self, project: Project, command_name: str) -> None:
-        pass
+        # Start network
+        network.start(self.client, project["name"])
+
+        cmd(self.client, project, command_name)
 
     def exec(self, project: Project, service_name: str) -> None:
-        if service_name not in project["app"]["services"]:
-            raise ExecError("Service not found.")
-
-        container_name = get_container_name(project["name"], service_name)
-        service_obj = project["app"]["services"][service_name]
-
-        user = os.getuid()
-
-        try:
-            container = self.client.containers.get(container_name)
-            if container.status == "exited":
-                container.remove()
-                raise ExecError('The service is not running. Try starting it first.')
-
-            # TODO: The Docker Python API doesn't seem to support interactive exec - use pty.spawn for now
-            shell = ["docker", "exec", "-it", "-u", str(user)]
-            if "src" in service_obj["roles"]:
-                # Service has source code, set workdir in container to current workdir
-                shell += ["-w", CONTAINER_SRC_PATH + "/" + get_current_relative_src_path(project)]
-            shell += [container_name, "sh", "-c", "if command -v bash >> /dev/null; then bash; else sh; fi"]
-            pty.spawn(shell)
-
-        except NotFound:
-            raise ExecError('The service is not running. Try starting it first.')
-        except APIError as err:
-            raise ExecError('Error communicating with the Docker Engine.') from err
+        service_exec(self.client, project, service_name)
 
     def supports_exec(self):
         return True
@@ -136,4 +110,3 @@ class DockerEngine(AbstractEngine):
             self.client.ping()
         except Exception as err:
             raise ConnectionError("Connection with Docker Daemon failed") from err
-        pass

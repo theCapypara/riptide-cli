@@ -9,24 +9,6 @@ class StartStopResultStep(NamedTuple):
     text: str
 
 
-class AdditionalPortsEntry(NamedTuple):
-    host: int
-    container: int
-
-
-class LoggingEntry(NamedTuple):
-    stdout: Union[str, None]
-    stderr: Union[str, None]
-    files: Dict
-
-
-class StatusResult(NamedTuple):
-    status: str  # stopped | running | starting
-    web: Union[str, None]  # proxy url if service has a web port assigned, None otherwise
-    additional_ports: Union[AdditionalPortsEntry, None]  # if service has additional ports
-    logging: Union[LoggingEntry, None]  # if service has logging defined
-
-
 class EndResultQueue(Exception):
     """
     Marks the end of a ResultQueue.

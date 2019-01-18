@@ -1,9 +1,6 @@
 import click
-from click import echo, clear
-from tqdm import tqdm
 
-from riptide.cli.helpers import cli_section, async_command, RiptideCliError
-from riptide.cli.command.base import status as status_cmd
+from riptide.cli.helpers import cli_section, async_command, RiptideCliError, TAB
 from riptide.cli.lifecycle import start_project, stop_project
 from riptide.engine.abstract import ExecError
 
@@ -78,10 +75,48 @@ def notes():
 
 @cli_section("CLI")
 @click.command()
-def cmd():
+@click.pass_context
+@click.argument('command', required=False)
+@click.option('--list', '-l', is_flag=True, help="List all commands")
+def cmd(ctx, command, list):
     """ TODO DOC """
-    # todo
-    pass
+    project = ctx.parent.system_config["project"]
+    engine = ctx.parent.engine
+
+    if list:
+        click.echo(click.style("Commands:", bold=True))
+        if "commands" not in project["app"] or len(project["app"]["commands"]) < 1:
+            click.echo(TAB + "No commands specified.")
+            return
+        for name, cmd in project["app"]["commands"].items():
+            if "aliases" in cmd:
+                # alias
+                click.echo(TAB + "- " + click.style(name, bold=True) + " (alias for " + cmd["aliases"] + ")")
+            else:
+                # normal cmd
+                click.echo(TAB + "- " + click.style(name, bold=True))
+        return
+
+    if command is None:
+        raise RiptideCliError("No command specified (--list for list).", ctx)
+
+    # check if command is actually an alias
+    might_be_alias = True
+    while might_be_alias:
+        if "commands" not in project["app"] or command not in project["app"]["commands"]:
+            raise RiptideCliError("Command not found.", ctx)
+
+        command_obj = project["app"]["commands"][command]
+        if "aliases" in command_obj:
+            command = command_obj["aliases"]
+        else:
+            might_be_alias = False
+
+    # Run Command
+    try:
+        engine.cmd(project, command)
+    except ExecError as err:
+        raise RiptideCliError(str(err), ctx) from err
 
 
 @cli_section("CLI")

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict, Union, List
 
-from riptide.engine.results import StartStopResultStep, StatusResult, MultiResultQueue
+from riptide.engine.results import StartStopResultStep, MultiResultQueue
 
 
 RIPTIDE_HOST_HOSTNAME = "host.riptide.internal"  # the engine has to make the host reachable under this hostname
@@ -33,9 +33,9 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def status(self, project: 'Project', system_config: 'Config') -> Dict[str, StatusResult]:
+    def status(self, project: 'Project', system_config: 'Config') -> Dict[str, bool]:
         """
-        Returns the status for the given project
+        Returns the status for the given project (whether services are started or not)
         :param system_config: Main system config
         :param project: 'Project'
         :return: StatusResult
