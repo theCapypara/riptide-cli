@@ -30,8 +30,10 @@ then
         USERNAME=$(getent passwd "$RIPTIDE__DOCKER_USER" | cut -d: -f1)
         usermod -a -G $RIPTIDE__DOCKER_GROUP $USERNAME
     fi
-    SU_PREFIX="su $USERNAME -m -c '"
-    SU_POSTFIX="'"
+    if [ ! -z "$RIPTIDE__DOCKER_RUN_MAIN_CMD_AS_ROOT" ]; then
+        SU_PREFIX="su $USERNAME -m -c '"
+        SU_POSTFIX="'"
+    fi
 fi
 
 # host.riptide.internal is supposed to be routable to the host.

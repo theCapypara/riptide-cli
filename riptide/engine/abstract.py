@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, Union
+from typing import Tuple, Dict, Union, List
 
 from riptide.engine.results import StartStopResultStep, StatusResult, MultiResultQueue
 
@@ -7,21 +7,27 @@ from riptide.engine.results import StartStopResultStep, StatusResult, MultiResul
 RIPTIDE_HOST_HOSTNAME = "host.riptide.internal"  # the engine has to make the host reachable under this hostname
 
 
+class ExecError(BaseException):
+    pass
+
+
 class AbstractEngine(ABC):
     @abstractmethod
-    def start_project(self, project: 'Project') -> MultiResultQueue[StartStopResultStep]:
+    def start_project(self, project: 'Project', services: List[str]) -> MultiResultQueue[StartStopResultStep]:
         """
         Starts all services in the project
         :type project: 'Project'
+        :param services: Names of the services to start
         :return: MultiResultQueue[StartResult]
         """
         pass
 
     @abstractmethod
-    def stop_project(self, project: 'Project') -> MultiResultQueue[StartStopResultStep]:
+    def stop_project(self, project: 'Project', services: List[str]) -> MultiResultQueue[StartStopResultStep]:
         """
         Stops all services in the project
         :type project: 'Project'
+        :param services: Names of the services to stop
         :return: MultiResultQueue[StopResult]
         """
         pass

@@ -18,6 +18,7 @@ ENTRYPOINT_CONTAINER_PATH = '/entrypoint_riptide.sh'
 EENV_DONT_RUN_CMD = "RIPTIDE__DOCKER_DONT_RUN_CMD"
 EENV_USER = "RIPTIDE__DOCKER_USER"
 EENV_GROUP = "RIPTIDE__DOCKER_GROUP"
+EENV_RUN_MAIN_CMD_AS_ROOT = "RIPTIDE__DOCKER_RUN_MAIN_CMD_AS_ROOT"
 EENV_ORIGINAL_ENTRYPOINT = "RIPTIDE__DOCKER_ORIGINAL_ENTRYPOINT"
 EENV_COMMAND_LOG_PREFIX = "RIPTIDE__DOCKER_CMD_LOGGING_"
 
@@ -111,8 +112,11 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
             # Change user?
             user_param = None if service["run_as_root"] else user
             if user_param:
-                environment[EENV_USER] = user
-                environment[EENV_GROUP] = user_group
+                environment[EENV_RUN_MAIN_CMD_AS_ROOT] = "yes"
+            # user and group are always created in the container, but only if the above ENV is set,
+            # the main cmd/entrypoint will be run as non-root
+            environment[EENV_USER] = user
+            environment[EENV_GROUP] = user_group
 
             # If src role is set, change workdir
             workdir = service.get_working_directory()

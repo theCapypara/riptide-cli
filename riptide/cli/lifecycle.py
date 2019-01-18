@@ -1,4 +1,5 @@
 from time import sleep
+from typing import Union, List
 
 from click import echo, style
 from tqdm import tqdm
@@ -10,13 +11,13 @@ PROGRESS_TEXT_WIDTH = 35
 ERROR_TEXT_WIDTH = 45
 
 
-def _build_progress_bars(project):
+def _build_progress_bars(services):
     progress_bars = {}
 
-    longest_service_name_len = len(max(project["app"]["services"].keys(), key=len))
+    longest_service_name_len = len(max(services, key=len))
 
     i = 0
-    for service_name in project["app"]["services"]:
+    for service_name in services:
         progress_bars[service_name] = tqdm(
             total=1,
             position=i,
@@ -58,19 +59,22 @@ def _display_errors(errors):
             echo()
 
 
-async def start_project(ctx, show_status=True):
+async def start_project(ctx, services: Union[List[str], None], show_status=True):
     """ TODO DOC """
     project = ctx.parent.system_config["project"]
     engine = ctx.parent.engine
 
+    if services is None:
+        services = project["app"]["services"].keys()
+
     echo("Starting services...")
     echo()
 
-    progress_bars = _build_progress_bars(project)
+    progress_bars = _build_progress_bars(services)
     errors = []
 
     try:
-        async for service_name, status, finished in engine.start_project(project):
+        async for service_name, status, finished in engine.start_project(project, services):
             _handle_progress_bar(service_name, status, finished, progress_bars, errors)
     except Exception as err:
         raise RiptideCliError("Error starting the services", ctx) from err
@@ -85,19 +89,22 @@ async def start_project(ctx, show_status=True):
         status_project(ctx)
 
 
-async def stop_project(ctx, show_status=True):
+async def stop_project(ctx, services: Union[List[str], None], show_status=True):
     """ TODO DOC """
     project = ctx.parent.system_config["project"]
     engine = ctx.parent.engine
 
+    if services is None:
+        services = project["app"]["services"].keys()
+
     echo("Stopping services...")
     echo()
 
-    progress_bars = _build_progress_bars(project)
+    progress_bars = _build_progress_bars(services)
     errors = []
 
     try:
-        async for service_name, status, finished in engine.stop_project(project):
+        async for service_name, status, finished in engine.stop_project(project, services):
             _handle_progress_bar(service_name, status, finished, progress_bars, errors)
     except Exception as err:
         raise RiptideCliError("Error stopping the services", ctx) from err

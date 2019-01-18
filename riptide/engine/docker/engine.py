@@ -1,17 +1,23 @@
 import asyncio
-import docker
-from typing import Tuple, Dict, Union
+import os
+import pty
+import sys
 
-from docker.errors import APIError
+import docker
+from typing import Tuple, Dict, Union, List
+
+import subprocess
+from docker.errors import APIError, NotFound
 
 from riptide.config.document.config import Config
 from riptide.config.document.project import Project
-from riptide.engine.abstract import AbstractEngine
+from riptide.config.files import CONTAINER_SRC_PATH, get_current_relative_project_path, get_current_relative_src_path
+from riptide.engine.abstract import AbstractEngine, ExecError
 from riptide.engine.docker import network, service
 from riptide.engine.docker.network import get_network_name
 from riptide.engine.docker.service import get_container_name
 from riptide.engine.project_start_ctx import riptide_start_project_ctx
-from riptide.engine.results import StatusResult, StartStopResultStep, MultiResultQueue, ResultQueue
+from riptide.engine.results import StatusResult, StartStopResultStep, MultiResultQueue, ResultQueue, ResultError
 
 
 class DockerEngine(AbstractEngine):
@@ -20,7 +26,7 @@ class DockerEngine(AbstractEngine):
         self.client = docker.from_env()
         self.ping()
 
-    def start_project(self, project: Project) -> MultiResultQueue[StartStopResultStep]:
+    def start_project(self, project: Project, services: List[str]) -> MultiResultQueue[StartStopResultStep]:
         with riptide_start_project_ctx(project):
             # Start network
             network.start(self.client, project["name"])
@@ -28,28 +34,33 @@ class DockerEngine(AbstractEngine):
             # Start all services
             queues = {}
             loop = asyncio.get_event_loop()
-            for service_obj in project["app"]["services"].values():
+            for service_name in services:
                 # Create queue and add to queues
                 queue = ResultQueue()
-                queues[queue] = service_obj["$name"]
-                # Run start task
-                loop.run_in_executor(
-                    None,
-                    service.start,
+                queues[queue] = service_name
+                if service_name in project["app"]["services"]:
+                    # Run start task
+                    loop.run_in_executor(
+                        None,
+                        service.start,
 
-                    project["name"],
-                    service_obj,
-                    self.client,
-                    queue
-                )
+                        project["name"],
+                        project["app"]["services"][service_name],
+                        self.client,
+                        queue
+                    )
+                else:
+                    # Services not found :(
+                    queue.end_with_error(queue.end_with_error(ResultError("Service not found.")))
 
             return MultiResultQueue(queues)
 
-    def stop_project(self, project: Project) -> MultiResultQueue[StartStopResultStep]:
+    def stop_project(self, project: Project, services: List[str]) -> MultiResultQueue[StartStopResultStep]:
         # Stop all services
         queues = {}
         loop = asyncio.get_event_loop()
-        for service_name in project["app"]["services"].keys():
+
+        for service_name in services:
             # Create queue and add to queues
             queue = ResultQueue()
             queues[queue] = service_name
@@ -90,7 +101,32 @@ class DockerEngine(AbstractEngine):
         pass
 
     def exec(self, project: Project, service_name: str) -> None:
-        pass
+        if service_name not in project["app"]["services"]:
+            raise ExecError("Service not found.")
+
+        container_name = get_container_name(project["name"], service_name)
+        service_obj = project["app"]["services"][service_name]
+
+        user = os.getuid()
+
+        try:
+            container = self.client.containers.get(container_name)
+            if container.status == "exited":
+                container.remove()
+                raise ExecError('The service is not running. Try starting it first.')
+
+            # TODO: The Docker Python API doesn't seem to support interactive exec - use pty.spawn for now
+            shell = ["docker", "exec", "-it", "-u", str(user)]
+            if "src" in service_obj["roles"]:
+                # Service has source code, set workdir in container to current workdir
+                shell += ["-w", CONTAINER_SRC_PATH + "/" + get_current_relative_src_path(project)]
+            shell += [container_name, "sh", "-c", "if command -v bash >> /dev/null; then bash; else sh; fi"]
+            pty.spawn(shell)
+
+        except NotFound:
+            raise ExecError('The service is not running. Try starting it first.')
+        except APIError as err:
+            raise ExecError('Error communicating with the Docker Engine.') from err
 
     def supports_exec(self):
         return True

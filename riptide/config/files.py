@@ -59,5 +59,23 @@ def get_project_meta_folder(project_folder_path):
         os.mkdir(path)
     return path
 
+def get_current_relative_project_path(project_folder_path):
+    """
+    Returns the current path relative to the project root
+    """
+    return os.path.relpath(os.getcwd(), start=project_folder_path)
+
+
+def get_current_relative_src_path(project):
+    """
+    Returns the current path relative to the specified src path. If outside of src, returns .
+    """
+    src = project["src"]
+    result = os.path.relpath(os.getcwd(), start=os.path.join(project.folder(), src))
+    if result[0:2] == "..":
+        return "."
+    return result
+
+
 def remove_all_special_chars(string):
     return re.sub(r"[^a-zA-Z0-9]", "-", string)
