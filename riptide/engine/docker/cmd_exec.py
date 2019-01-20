@@ -1,6 +1,7 @@
 import os
 import pty
 import time
+from typing import List
 
 from docker.errors import NotFound, APIError
 
@@ -45,7 +46,7 @@ def get_cmd_container_name(project_name: str, command_name: str):
     return 'riptide__' + project_name + '__cmd__' + command_name + '__' + str(os.getpid())
 
 
-def cmd(client, project: Project, command_name: str) -> None:
+def cmd(client, project: Project, command_name: str, arguments: List[str]) -> None:
     if command_name not in project["app"]["commands"]:
         raise ExecError("Command not found.")
 
@@ -77,6 +78,6 @@ def cmd(client, project: Project, command_name: str) -> None:
 
     shell += [
         command_obj["image"],
-        "sh", "-c", command_obj["command"]
+        "sh", "-c", command_obj["command"] + " " + " ".join(arguments)
     ]
     pty.spawn(shell)

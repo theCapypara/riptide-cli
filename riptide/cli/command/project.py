@@ -77,8 +77,9 @@ def notes():
 @click.command()
 @click.pass_context
 @click.argument('command', required=False)
+@click.argument('arguments', required=False, nargs=-1)
 @click.option('--list', '-l', is_flag=True, help="List all commands")
-def cmd(ctx, command, list):
+def cmd(ctx, command, arguments, list):
     """ TODO DOC """
     project = ctx.parent.system_config["project"]
     engine = ctx.parent.engine
@@ -114,7 +115,7 @@ def cmd(ctx, command, list):
 
     # Run Command
     try:
-        engine.cmd(project, command)
+        engine.cmd(project, command, arguments)
     except ExecError as err:
         raise RiptideCliError(str(err), ctx) from err
 

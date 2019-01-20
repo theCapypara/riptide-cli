@@ -1,3 +1,5 @@
+import os
+
 import click
 from click import ClickException, echo, Option, Command, Context
 from click_help_colors import HelpColorsGroup
@@ -9,6 +11,7 @@ from riptide.cli.command import project as project_commands
 from riptide.cli.command.base import COMMAND_CREATE_CONFIG_USER
 
 from riptide.cli.helpers import RiptideCliError, warn
+from riptide.cli.shell_integration import load_shell_integration
 from riptide.config.loader import load_config, load_engine
 from riptide.config.loader import write_project
 
@@ -65,13 +68,16 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
         except ConnectionError as ex:
             raise RiptideCliError('Connection to engine failed.', ctx) from ex
 
-    # todo: load/update bash integration if not fast - TODO: Update commands with hook and not generally on start!
-    # todo warnings (no zsh/bash integration ready)
+    if 'RIPTIDE_SHELL_LOADED' not in os.environ:
+        warn("Riptide shell integration not enabled.")
+        echo()
 
     # Load sub commands
     base_commands.load(ctx)
     if hasattr(ctx, "system_config"):
         project_commands.load(ctx)
+        if "project" in ctx.system_config:
+            load_shell_integration(ctx.system_config)
         db_commands.load(ctx)
         import_commands.load(ctx)
 

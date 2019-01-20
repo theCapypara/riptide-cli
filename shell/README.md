@@ -1,0 +1,2 @@
+# Riptide
+## Bash / Zsh integration

@@ -1,4 +1,5 @@
 #!/bin/sh
+# todo file header
 
 # redirect stdout and stderr to files
 exec >>/riptide_stdout

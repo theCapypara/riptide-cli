@@ -93,11 +93,11 @@ class DockerEngine(AbstractEngine):
         port = project["app"]["services"][service_name]["port"]
         return ip, port
 
-    def cmd(self, project: Project, command_name: str) -> None:
+    def cmd(self, project: Project, command_name: str, arguments: List[str]) -> None:
         # Start network
         network.start(self.client, project["name"])
 
-        cmd(self.client, project, command_name)
+        cmd(self.client, project, command_name, arguments)
 
     def exec(self, project: Project, service_name: str) -> None:
         service_exec(self.client, project, service_name)

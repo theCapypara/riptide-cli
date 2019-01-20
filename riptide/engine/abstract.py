@@ -53,7 +53,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def cmd(self, project: 'Project', command_name: str) -> None:
+    def cmd(self, project: 'Project', command_name: str, arguments: List[str]) -> None:
         """
         Execute the command identified by command_name in the project environment and
         attach command to stdout/stdin/stderr.
