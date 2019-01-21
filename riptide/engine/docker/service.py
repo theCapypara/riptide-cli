@@ -6,8 +6,8 @@ from docker import DockerClient
 from docker.errors import NotFound, APIError, ContainerError
 
 from riptide.config.document.config import Config
-from riptide.config.document.service import Service, PurePosixPath
-from riptide.config.files import riptide_assets_dir, CONTAINER_SRC_PATH
+from riptide.config.document.service import Service
+from riptide.config.files import riptide_assets_dir
 from riptide.engine.docker.network import get_network_name
 from riptide.engine.results import ResultQueue, ResultError, StartStopResultStep
 
@@ -18,9 +18,10 @@ ENTRYPOINT_CONTAINER_PATH = '/entrypoint_riptide.sh'
 EENV_DONT_RUN_CMD = "RIPTIDE__DOCKER_DONT_RUN_CMD"
 EENV_USER = "RIPTIDE__DOCKER_USER"
 EENV_GROUP = "RIPTIDE__DOCKER_GROUP"
-EENV_RUN_MAIN_CMD_AS_ROOT = "RIPTIDE__DOCKER_RUN_MAIN_CMD_AS_ROOT"
+EENV_RUN_MAIN_CMD_AS_USER = "RIPTIDE__DOCKER_RUN_MAIN_CMD_AS_USER"
 EENV_ORIGINAL_ENTRYPOINT = "RIPTIDE__DOCKER_ORIGINAL_ENTRYPOINT"
 EENV_COMMAND_LOG_PREFIX = "RIPTIDE__DOCKER_CMD_LOGGING_"
+EENV_NO_STDOUT_REDIRECT = "RIPTIDE__DOCKER_NO_STDOUT_REDIRECT"
 
 
 def start(project_name: str, service: Service, client: DockerClient, queue: ResultQueue):
@@ -65,7 +66,8 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
         # 2. Pulling image
         try:
             queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Pulling image... "))
-            for line in client.api.pull(service['image'], stream=True):
+            image_name_full = service['image'] if ":" in service['image'] else service['image'] + ":latest"
+            for line in client.api.pull(image_name_full, stream=True):
                 status = json.loads(line)
                 if "progress" in status:
                     queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Pulling image... " + status["status"] + " : " + status["progress"]))
@@ -112,11 +114,12 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
             # Change user?
             user_param = None if service["run_as_root"] else user
             if user_param:
-                environment[EENV_RUN_MAIN_CMD_AS_ROOT] = "yes"
+                environment[EENV_RUN_MAIN_CMD_AS_USER] = "yes"
             # user and group are always created in the container, but only if the above ENV is set,
             # the main cmd/entrypoint will be run as non-root
-            environment[EENV_USER] = user
-            environment[EENV_GROUP] = user_group
+            if not service["dont_create_user"]:
+                environment[EENV_USER] = user
+                environment[EENV_GROUP] = user_group
 
             # If src role is set, change workdir
             workdir = service.get_working_directory()

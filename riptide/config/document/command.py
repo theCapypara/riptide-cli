@@ -4,7 +4,8 @@ from schema import Schema, Optional, Or
 
 from configcrunch import YamlConfigDocument
 from configcrunch.abstract import variable_helper
-from riptide.config.files import get_project_meta_folder, CONTAINER_SRC_PATH
+from riptide.config.files import get_project_meta_folder, CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
+from riptide.config.service.config_files import get_config_file_path
 
 
 class Command(YamlConfigDocument):
@@ -59,6 +60,9 @@ class Command(YamlConfigDocument):
         # todo: merge with services logic
         if "additional_volumes" in self:
             for vol in self["additional_volumes"]:
+                # ~ paths
+                if vol["host"][0] == "~":
+                    vol["host"] = os.path.expanduser("~") + vol["host"][1:]
                 # Relative paths
                 if not os.path.isabs(vol["host"]):
                     vol["host"] = os.path.join(project.folder(), vol["host"])
@@ -75,10 +79,11 @@ class Command(YamlConfigDocument):
         # TODO: This propably is really not the best idea
         The passed environment is simple all of the riptide's process environment,
         minus some important meta-variables such as USERNAME and PATH.
+        Adds HOME to be /home_cmd.
         :return:
         """
         env = os.environ.copy()
-        keys_to_remove = {"PATH", "PS1", "  USERNAME", "PWD", "SHELL", "HOME"}.intersection(set(env.keys()))
+        keys_to_remove = {"PATH", "PS1", "USERNAME", "PWD", "SHELL", "HOME"}.intersection(set(env.keys()))
         for key in keys_to_remove:
             del env[key]
         return env
@@ -88,3 +93,13 @@ class Command(YamlConfigDocument):
         path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'cmd_data', self["$name"])
         os.makedirs(path, exist_ok=True)
         return path
+
+    @variable_helper
+    def home_path(self):
+        return CONTAINER_HOME_PATH
+
+    @variable_helper
+    def config_from_service(self, service_name, path):
+        """ TODO DOC """
+        service = self.parent()["services"][service_name]
+        return get_config_file_path(path, service)

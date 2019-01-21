@@ -6,7 +6,7 @@ from schema import Schema, Optional
 
 from configcrunch import YamlConfigDocument
 from configcrunch.abstract import variable_helper
-from riptide.config.files import CONTAINER_SRC_PATH
+from riptide.config.files import CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
 from riptide.config.service.config_files import *
 from riptide.config.service.logging import *
 
@@ -43,6 +43,9 @@ class Service(YamlConfigDocument):
 
         if "run_as_root" not in self:
             self.doc["run_as_root"] = False
+
+        if "dont_create_user" not in self:
+            self.doc["dont_create_user"] = False
 
         if "pre_start" not in self:
             self.doc["pre_start"] = []
@@ -93,6 +96,8 @@ class Service(YamlConfigDocument):
                 ],
                 # Whether to run as user using riptide or root. Default: False
                 Optional('run_as_root'): bool,
+                # Whether to create the riptide user and group, mapped to current user. Default: False
+                Optional('dont_create_user'): bool,
                 Optional('working_directory'): str,
                 Optional('additional_ports'): [
                     {
@@ -174,6 +179,9 @@ class Service(YamlConfigDocument):
         # additional_volumes
         if "additional_volumes" in self:
             for vol in self["additional_volumes"]:
+                # ~ paths
+                if vol["host"][0] == "~":
+                    vol["host"] = os.path.expanduser("~") + vol["host"][1:]
                 # Relative paths
                 if not os.path.isabs(vol["host"]):
                     vol["host"] = os.path.join(project.folder(), vol["host"])
@@ -248,3 +256,7 @@ class Service(YamlConfigDocument):
     def host_address(self):
         """Returns the hostname that the host system is reachable under"""
         return RIPTIDE_HOST_HOSTNAME
+
+    @variable_helper
+    def home_path(self):
+        return CONTAINER_HOME_PATH

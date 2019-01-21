@@ -8,6 +8,10 @@ RIPTIDE_PROJECT_META_FOLDER_NAME = '_riptide'
 # The path of the source code to be mounted INSIDE the containers
 CONTAINER_SRC_PATH = '/src'
 
+# The ~ path inside the running command container
+CONTAINER_HOME_PATH = "/home/riptide"
+
+
 def is_path_root(path):
     real_path = os.path.realpath(path)
     parent_real_path = os.path.realpath(os.path.join(real_path, '..'))
