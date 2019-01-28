@@ -4,6 +4,7 @@ from riptide.cli.helpers import cli_section
 
 
 def load(ctx):
+    """Adds all database commands to the CLI, if database management is available"""
     if "project" in ctx.system_config:  # todo
         ctx.command.add_command(status,  'db:status')
         ctx.command.add_command(lst,     'db:list')

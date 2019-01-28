@@ -12,6 +12,7 @@ COMMAND_CREATE_CONFIG_USER = 'config:create:user'
 
 
 def load(ctx):
+    """Adds all base commands to the CLI"""
     ctx.command.add_command(config_dump,            'config:dump')
     ctx.command.add_command(config_create_user,     COMMAND_CREATE_CONFIG_USER)
     ctx.command.add_command(config_create_project,  'config:create:project')
@@ -22,10 +23,18 @@ def load(ctx):
 @click.command()
 @click.pass_context
 def config_dump(ctx):
-    """ TODO DOC """
-    echo("# TODO TEXT")  # todo
+    """
+    Outputs the configuration currently in use, as interpreted by Riptide.
+    The result is the final configuration that was created by merging all configuration files together
+    and resolving all variables.
+    Includes some internal system keywords (keys with $, except $ref).
+    """
+    echo("# Riptide configuration")
+    echo()
+    echo("# This is the final configuration that was created by merging all configuration files together")
+    echo("# and resolving all variables.")
+    echo("# Includes some internal system keywords (keys with $, except $ref).")
     echo(yaml.dump(ctx.parent.system_config.to_dict(), default_flow_style=False))
-    pass
 
 
 @cli_section("Configuration")
@@ -36,7 +45,7 @@ def config_dump(ctx):
               help='Specify whether you want to edit the file after creating it '
                    '(or edit the existing file if it already exists). Default is ask.')
 def config_create_user(force, edit):
-    """ TODO DOC """
+    """ Creates or edits the user/system configuration file. """
     config_path = riptide_main_config_file()
     if os.path.exists(config_path) and not force:
         warn('The config file already exists. It is located at %s. '
@@ -64,7 +73,7 @@ def config_create_user(force, edit):
               help='Specify whether you want to edit the file after creating it '
                    '(or edit the existing file if it already exists). Default is ask.')
 def config_create_project(force, edit):
-    """ TODO DOC """
+    """ Creates or edits the project file. """
     config_path = os.path.join(os.getcwd(), RIPTIDE_PROJECT_CONFIG_NAME)
     if os.path.exists(config_path) and not force:
         warn('A project file already exists in the current directory. '
@@ -88,5 +97,8 @@ def config_create_project(force, edit):
 @click.command()
 @click.pass_context
 def status(ctx):
-    """ TODO DOC """
+    """
+    Outputs the current status.
+    This includes the status of the current project (if any is loaded) and all services of that project.
+    """
     status_project(ctx)

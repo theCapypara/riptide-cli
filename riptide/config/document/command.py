@@ -72,6 +72,12 @@ class Command(YamlConfigDocument):
 
         return volumes
 
+    def resolve_alias(self):
+        """ If this is not an alias, returns self. Otherwise returns command that is aliased by this (recursively). """
+        if "aliases" in self:
+            return self.parent()["commands"][self["aliases"]].resolve_alias()
+        return self
+
     def collect_environment(self):
         """
         Collect environment variables from the "environment" entry in the service
@@ -97,9 +103,3 @@ class Command(YamlConfigDocument):
     @variable_helper
     def home_path(self):
         return CONTAINER_HOME_PATH
-
-    @variable_helper
-    def config_from_service(self, service_name, path):
-        """ TODO DOC """
-        service = self.parent()["services"][service_name]
-        return get_config_file_path(path, service)

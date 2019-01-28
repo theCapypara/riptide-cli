@@ -1,5 +1,7 @@
 # To be sourced by a zsh shell
-# todo file header
+# Riptide's zsh integration
+# Works by adding itself to the chpwd_functions.
+
 SCRIPTPATH=$(dirname ${(%):-%x})
 
 . "$SCRIPTPATH/common.sh"

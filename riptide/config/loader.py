@@ -6,8 +6,7 @@ from click import echo
 from riptide.cli.helpers import RiptideCliError
 from riptide.config.document.config import Config
 from riptide.config.document.project import Project
-from riptide.config.files import discover_project_file, riptide_main_config_file, riptide_projects_file, \
-    riptide_ports_config_file
+from riptide.config.files import discover_project_file, riptide_main_config_file, riptide_projects_file
 from riptide.engine.docker.engine import DockerEngine
 
 
@@ -113,7 +112,7 @@ def write_project(project, rename, ctx):
             changed = True
             if not rename:
                 raise RiptideCliError(
-                    'The riptide project named %s is already located at %s but your current project file is in %s.\n'
+                    'The Riptide project named %s is already located at %s but your current project file is in %s.\n'
                     'Each project name can only be mapped to one path. If you want to "rename" %s to use this '
                     'new path, pass the --rename flag, otherwise rename the project in the riptide.yml file.\n'
                     'If you want to edit these mappings manually, have a look at the file %s.'

@@ -1,5 +1,7 @@
 # To be sourced by a bash shell
-# todo file header
+# Riptide's bash integration
+# Works by adding itself to the PROMPT_COMMAND and checking if working directory changed.
+
 SCRIPTPATH=$(dirname "${BASH_SOURCE[0]}")
 
 . "$SCRIPTPATH/common.sh"

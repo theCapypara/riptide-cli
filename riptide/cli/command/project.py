@@ -6,6 +6,7 @@ from riptide.engine.abstract import ExecError
 
 
 def load(ctx):
+    """Adds project commands to the CLI, if project commands are available"""
     if "project" in ctx.system_config:
         ctx.command.add_command(start,    'start')
         ctx.command.add_command(start_fg, 'start:fg')
@@ -13,7 +14,7 @@ def load(ctx):
         ctx.command.add_command(restart,  'restart')
         ctx.command.add_command(notes,    'notes')
         ctx.command.add_command(cmd,      'cmd')
-        if True:  # engine.supports_exec(): TODO TODO
+        if ctx.engine.supports_exec():
             ctx.command.add_command(exec_cmd, 'exec')
 
 
@@ -23,7 +24,7 @@ def load(ctx):
 @click.option('--services', '-s', required=False, help='Names of services to start, comma-separated (default: all)')
 @async_command
 async def start(ctx, services):
-    """ TODO DOC """
+    """ Starts services. """
     if services is not None:
         services = services.split(",")
     await start_project(ctx, services)
@@ -36,7 +37,12 @@ async def start(ctx, services):
 @click.option('--services', '-s', required=False, help='Names of additional services to start, comma-separated (default: all)')
 @async_command
 async def start_fg(ctx, service, services):
-    """ TODO DOC """
+    """
+    Starts services and runs one in foreground.
+    Starts all services specified by --services (or all), except for <service> (main service by default).
+    <service> is instead started separately after the rest in foreground mode. Stdin/Stdout/Stderr are attached
+    to this service and not written to their log files, even if stdout/stderr logging is enabled for the service.
+    """
     # todo
 
 
@@ -46,7 +52,7 @@ async def start_fg(ctx, service, services):
 @click.option('--services', '-s', required=False, help='Names of services to stop, comma-separated (default: all)')
 @async_command
 async def stop(ctx, services):
-    """ TODO DOC """
+    """ Stops services. """
     if services is not None:
         services = services.split(",")
     await stop_project(ctx, services)
@@ -58,7 +64,7 @@ async def stop(ctx, services):
 @click.option('--services', '-s', required=False, help='Names of services to restart, comma-separated (default: all)')
 @async_command
 async def restart(ctx, services):
-    """ TODO DOC """
+    """ Stops and then starts services. """
     if services is not None:
         services = services.split(",")
     await stop_project(ctx, services, show_status=False)
@@ -68,7 +74,7 @@ async def restart(ctx, services):
 @cli_section("Misc")
 @click.command()
 def notes():
-    """ TODO DOC """
+    """ Shows the installation notice. """
     # todo
     pass
 
@@ -80,7 +86,14 @@ def notes():
 @click.argument('arguments', required=False, nargs=-1)
 @click.option('--list', '-l', is_flag=True, help="List all commands")
 def cmd(ctx, command, arguments, list):
-    """ TODO DOC """
+    """
+    Executes a project command.
+    Project commands are specified in the project configuration.
+    The commands are run interactively (Stdout/Stderr/Stdin are attached).
+    If you are currently in a subdirectory of 'src' (see project configuration), then the command
+    will be executed inside of this directory. Otherwise the command will be executed in the root
+    of the 'src' directory. All commands are executed as the current user + group.
+    """
     project = ctx.parent.system_config["project"]
     engine = ctx.parent.engine
 
@@ -101,17 +114,11 @@ def cmd(ctx, command, arguments, list):
     if command is None:
         raise RiptideCliError("No command specified (--list for list).", ctx)
 
-    # check if command is actually an alias
-    might_be_alias = True
-    while might_be_alias:
-        if "commands" not in project["app"] or command not in project["app"]["commands"]:
-            raise RiptideCliError("Command not found.", ctx)
+    if "commands" not in project["app"] or command not in project["app"]["commands"]:
+        raise RiptideCliError("Command not found.", ctx)
 
-        command_obj = project["app"]["commands"][command]
-        if "aliases" in command_obj:
-            command = command_obj["aliases"]
-        else:
-            might_be_alias = False
+    # check if command is actually an alias
+    command = project["app"]["commands"][command].resolve_alias()["$name"]
 
     # Run Command
     try:
@@ -125,7 +132,13 @@ def cmd(ctx, command, arguments, list):
 @click.pass_context
 @click.argument('service', required=False)
 def exec_cmd(ctx, service):
-    """ TODO DOC """
+    """
+    Opens a shell into a service container.
+    The shell is run interactively (Stdout/Stderr/Stdin are attached).
+    If you are currently in a subdirectory of 'src' (see project configuration), then the shell
+    will be executed inside of this directory. Otherwise the shell will be executed in the root
+    of the 'src' directory. Shell is executed as the current user + group (may be named differently inside the container).
+    """
     project = ctx.parent.system_config["project"]
     engine = ctx.parent.engine
 

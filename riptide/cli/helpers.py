@@ -6,6 +6,7 @@ from functools import update_wrapper
 
 
 def get_is_verbose(ctx):
+    """Returns whether or not verbose mode is enabled"""
     if hasattr(ctx, "riptide_options"):
         return ctx.riptide_options["verbose"]
     if hasattr(ctx, "parent"):
@@ -15,7 +16,7 @@ def get_is_verbose(ctx):
 
 
 class RiptideCliError(ClickException):
-
+    """Custom error class for displaying errors in the Riptide CLI"""
     def __init__(self, message, ctx):
         super().__init__(message)
         self.ctx = ctx
@@ -32,7 +33,7 @@ class RiptideCliError(ClickException):
             if self.__context__ is not None:
                 echo(style('>> Error message: %s' % str(self.__context__), bg='red', fg='white'), file=file)
                 echo()
-                echo(style('Use -v to show stack traces.', fg='yellow'), file=file)
+                echo(style('Use -v (before command!) to show stack traces.', fg='yellow'), file=file)
 
 
 def warn(msg):
@@ -52,8 +53,11 @@ def cli_section(section):
     return decorator
 
 
-## SOURCE:  https://github.com/pallets/click/issues/85
 def async_command(f):
+    """
+    Makes a Click command be wrapped inside the execution of an asyncio loop
+    SOURCE:  https://github.com/pallets/click/issues/85
+    """
     f = asyncio.coroutine(f)
 
     def wrapper(*args, **kwargs):

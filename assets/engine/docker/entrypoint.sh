@@ -1,5 +1,27 @@
 #!/bin/sh
-# todo file header
+# Riptide Docker entrypoint script.
+#
+# Responsible for running some important pre-start operations.
+# Afterwards runs the original entrypoint and/or command in (more or less) the same way Docker would.
+# The original entrypoint may be specified in the environment variable RIPTIDE__DOCKER_ORIGINAL_ENTRYPOINT (see below)
+# The original command may be specified by being passed as arguments to this script.
+#
+# Behaviour is controlled by environment variables.
+#
+# RIPTIDE__DOCKER_NO_STDOUT_REDIRECT:
+#
+# RIPTIDE__DOCKER_USER:
+#
+# RIPTIDE__DOCKER_GROUP:
+#
+# RIPTIDE__DOCKER_RUN_MAIN_CMD_AS_USER:
+#
+# RIPTIDE__DOCKER_DONT_RUN_CMD:
+#
+# RIPTIDE__DOCKER_ORIGINAL_ENTRYPOINT:
+#
+# RIPTIDE__DOCKER_CMD_LOGGING_*:
+#
 
 if [ -z "$RIPTIDE__DOCKER_NO_STDOUT_REDIRECT" ]
 then
@@ -35,7 +57,7 @@ then
     fi
     GROUP_NAME=$(getent group $RIPTIDE__DOCKER_GROUP  | awk -F\: '{ print $1 }' )
     # ADD USER
-    if ! getent passwd $RIPTIDE__DOCKER_USER; then
+    if ! getent passwd $RIPTIDE__DOCKER_USER > /dev/null; then
         USERNAME="riptide"
         # useradd might be called adduser (alpine)
         if command -v useradd > /dev/null; then

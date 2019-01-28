@@ -1,4 +1,4 @@
-from time import sleep
+import os
 from typing import Union, List
 
 from click import echo, style
@@ -7,11 +7,25 @@ from tqdm import tqdm
 from riptide.cli.helpers import RiptideCliError, TAB
 from riptide.engine.status import status_for
 
-PROGRESS_TEXT_WIDTH = 35
-ERROR_TEXT_WIDTH = 45
+
+def text_width_right():
+    """returns ~40% of terminal width space in characters"""
+    try:
+        return round(os.get_terminal_size()[0] * 0.4)
+    except OSError:
+        return 45  # Fallback
+
+
+def text_width_error():
+    """returns ~70% of terminal width space in characters"""
+    try:
+        return round(os.get_terminal_size()[0] * 0.7)
+    except OSError:
+        return 45  # Fallback
 
 
 def _build_progress_bars(services):
+    """Builds and prepares the progressbar objects for each service"""
     progress_bars = {}
 
     longest_service_name_len = len(max(services, key=len))
@@ -22,7 +36,7 @@ def _build_progress_bars(services):
             total=1,
             position=i,
             bar_format="{desc}{n_fmt}/{total_fmt}|{bar}| {postfix[0]}",
-            postfix=["...".ljust(PROGRESS_TEXT_WIDTH)]
+            postfix=["...".ljust(text_width_right())]
         )
         i += 1
         progress_bars[service_name].set_description(service_name.ljust(longest_service_name_len))
@@ -30,18 +44,21 @@ def _build_progress_bars(services):
 
 
 def _handle_progress_bar(service_name, status, finished, progress_bars, errors):
+    """Handles progress bar updates"""
     if finished:
         if status:
             # error
+            tw = text_width_error()
             errors.append({"service": service_name, "error": status.cause if status.cause else status})
-            msg = (status.message[:ERROR_TEXT_WIDTH-3] + '...') if len(status.message) > ERROR_TEXT_WIDTH-3 else status.message.ljust(ERROR_TEXT_WIDTH)
+            msg = (status.message[:tw-3] + '...') if len(status.message) > tw-3 else status.message.ljust(tw)
             progress_bars[service_name].bar_format = "{desc}" + msg
             progress_bars[service_name].refresh()
         else:
             # no error
             pass
     else:
-        text_for_status = (status.text[:PROGRESS_TEXT_WIDTH-3] + '...') if len(status.text) > PROGRESS_TEXT_WIDTH-3 else status.text.ljust(PROGRESS_TEXT_WIDTH)
+        tw = text_width_right()
+        text_for_status = (status.text[:tw-3] + '...') if len(status.text) > tw-3 else status.text.ljust(tw)
         progress_bars[service_name].postfix[0] = text_for_status
         if progress_bars[service_name].total != status.steps and status.steps is not None:
             progress_bars[service_name].total = status.steps
@@ -51,6 +68,7 @@ def _handle_progress_bar(service_name, status, finished, progress_bars, errors):
 
 
 def _display_errors(errors):
+    """Displays errors during start/stop (if any)."""
     if len(errors) > 0:
         echo(style("There were errors while starting some of the services: ", fg='red', bold=True))
         for error in errors:
@@ -60,7 +78,10 @@ def _display_errors(errors):
 
 
 async def start_project(ctx, services: Union[List[str], None], show_status=True):
-    """ TODO DOC """
+    """
+    Starts a project by starting all it's services (or a subset).
+    If show_status is true, shows status after that.
+    """
     project = ctx.parent.system_config["project"]
     engine = ctx.parent.engine
 
@@ -90,7 +111,10 @@ async def start_project(ctx, services: Union[List[str], None], show_status=True)
 
 
 async def stop_project(ctx, services: Union[List[str], None], show_status=True):
-    """ TODO DOC """
+    """
+    Stops a project by stopping all it's services (or a subset).
+    If show_status is true, shows status after that.
+    """
     project = ctx.parent.system_config["project"]
     engine = ctx.parent.engine
 
@@ -120,7 +144,7 @@ async def stop_project(ctx, services: Union[List[str], None], show_status=True):
 
 
 def status_project(ctx):
-    """ TODO DOC """
+    """ Shows the status of Riptide and the loaded project (if any) by collecting data from the engine. """
     echo("Status:")
     engine = ctx.parent.engine
     system_config = ctx.parent.system_config

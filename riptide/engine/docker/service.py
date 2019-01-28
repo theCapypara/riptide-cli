@@ -64,19 +64,24 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
     if needs_to_be_started:
 
         # 2. Pulling image
+        queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Checking image... "))
+        # Check if image exists
         try:
-            queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Pulling image... "))
-            image_name_full = service['image'] if ":" in service['image'] else service['image'] + ":latest"
-            for line in client.api.pull(image_name_full, stream=True):
-                status = json.loads(line)
-                if "progress" in status:
-                    queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Pulling image... " + status["status"] + " : " + status["progress"]))
-                else:
-                    queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Pulling image... " + status["status"]))
-        except APIError as err:
-            queue.end_with_error(ResultError("ERROR pulling image.", cause=err))
-            stop(project_name, service["$name"], client)
-            return
+            client.images.get(service["image"])
+        except NotFound:
+            try:
+                queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Pulling image... "))
+                image_name_full = service['image'] if ":" in service['image'] else service['image'] + ":latest"
+                for line in client.api.pull(image_name_full, stream=True):
+                    status = json.loads(line)
+                    if "progress" in status:
+                        queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Pulling image... " + status["status"] + " : " + status["progress"]))
+                    else:
+                        queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Pulling image... " + status["status"]))
+            except APIError as err:
+                queue.end_with_error(ResultError("ERROR pulling image.", cause=err))
+                stop(project_name, service["$name"], client)
+                return
 
         # Collect labels
         labels = {

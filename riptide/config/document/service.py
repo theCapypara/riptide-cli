@@ -1,5 +1,3 @@
-import os
-
 from typing import List
 
 from schema import Schema, Optional
@@ -207,7 +205,7 @@ class Service(YamlConfigDocument):
     def collect_ports(self):
         """
         Takes additional_ports and returns the actual host/container mappings for these
-        ports. The resulting host parts are system-unique, so riptide will not assign
+        ports. The resulting host parts are system-unique, so Riptide will not assign
         a port twice across multiple projects/services.
         To achieve this, port bindings are saved into $CONFIG_DIR/ports.json.
 
@@ -260,3 +258,8 @@ class Service(YamlConfigDocument):
     @variable_helper
     def home_path(self):
         return CONTAINER_HOME_PATH
+
+    @variable_helper
+    def config(self, from_path):
+        """ TODO DOC """
+        return get_config_file_path(from_path, self)

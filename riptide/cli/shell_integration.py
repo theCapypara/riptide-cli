@@ -8,6 +8,10 @@ from riptide.config.loader import load_config, load_engine
 
 
 def load_shell_integration(system_config: Config):
+    """
+    'Loads' the shell intergration by writing a file containing the project name into the _riptide folder
+    and writing executables for all commands to the bin-folder.
+    """
     # Write project name to file
     meta_folder = get_project_meta_folder(system_config["project"].folder())
     with open(os.path.join(meta_folder, 'name'), 'w') as project_name_file:
@@ -48,13 +52,6 @@ def run_cmd(command_name, arguments):
     engine = load_engine(system_config["engine"])
 
     # check if command is actually an alias
-    # todo: doppelter code
-    might_be_alias = True
-    while might_be_alias:
-        command_obj = system_config["project"]["app"]["commands"][command_name]
-        if "aliases" in command_obj:
-            command_name = command_obj["aliases"]
-        else:
-            might_be_alias = False
+    command_name = system_config["project"]["app"]["commands"][command_name].resolve_alias()["$name"]
 
     engine.cmd(system_config["project"], command_name, arguments)
