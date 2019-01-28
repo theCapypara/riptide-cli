@@ -73,7 +73,7 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
 
     # Load sub commands
     base_commands.load(ctx)
-    if hasattr(ctx, "system_config"):
+    if ctx.system_config is not None:
         project_commands.load(ctx)
         if "project" in ctx.system_config:
             load_shell_integration(ctx.system_config)
