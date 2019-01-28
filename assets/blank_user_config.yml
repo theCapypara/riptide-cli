@@ -1,4 +1,4 @@
-# TODO Help text
+# Riptide example system configuration file. Documentation: https://... # todo
 riptide:
   proxy:
     url: local

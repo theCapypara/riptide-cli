@@ -8,6 +8,7 @@ from riptide.cli.command import base as base_commands
 from riptide.cli.command import db as db_commands
 from riptide.cli.command import importt as import_commands
 from riptide.cli.command import project as project_commands
+from riptide.cli.command import repo as repo_commands
 from riptide.cli.command.base import COMMAND_CREATE_CONFIG_USER
 
 from riptide.cli.helpers import RiptideCliError, warn
@@ -31,8 +32,7 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
     """
     ctx.riptide_options = {
         "project": None,
-        "verbose": False,
-        "fast": False
+        "verbose": False
     }
     ctx.riptide_options.update(kwargs)
 
@@ -46,16 +46,16 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
     except FileNotFoundError:
         # Don't show this if the user may have called the command. Since we don't know the invoked command at this
         # point, we just check if the name of the command is anywhere in the protected_args
-        if COMMAND_CREATE_CONFIG_USER not in ctx.protected_args:
+        if COMMAND_CREATE_CONFIG_USER not in ctx.protected_args and not ctx.resilient_parsing:
             warn("You don't have a configuration file for Riptide yet. Use %s to create one." % COMMAND_CREATE_CONFIG_USER)
             echo()
     except Exception as ex:
         raise RiptideCliError('Error parsing the system or project configuration.', ctx) from ex
     else:
-        if "project" not in ctx.system_config:
+        if "project" not in ctx.system_config and not ctx.resilient_parsing:
             warn("No project found. Are you running Riptide inside a Riptide project?")
             echo()
-        elif not ctx.riptide_options["fast"]:
+        else:
             # Write project name -> path mapping into projects.json file.
             write_project(ctx.system_config["project"], rename, ctx)
         # Load engine
@@ -66,7 +66,7 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
         except ConnectionError as ex:
             raise RiptideCliError('Connection to engine failed.', ctx) from ex
 
-    if 'RIPTIDE_SHELL_LOADED' not in os.environ:
+    if 'RIPTIDE_SHELL_LOADED' not in os.environ and not ctx.resilient_parsing:
         # todo: supressable via argument.
         warn("Riptide shell integration not enabled.")
         echo()
@@ -74,11 +74,14 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
     # Load sub commands
     base_commands.load(ctx)
     if ctx.system_config is not None:
+        repo_commands.load(ctx)
         project_commands.load(ctx)
-        if "project" in ctx.system_config:
-            load_shell_integration(ctx.system_config)
         db_commands.load(ctx)
         import_commands.load(ctx)
+
+    # Set up zsh/bash integration
+    if "project" in ctx.system_config:
+        load_shell_integration(ctx.system_config)
 
 
 @click.group(
@@ -89,8 +92,6 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
 )
 @click.option('-p', '--project', required=False, type=str,
               help="Path to the project file, if not given, the file will be located automatically.")
-@click.option('--fast', is_flag=True,
-              help="Skip updating repositories.")  # TODO explanation
 @click.option('-v', '--verbose', is_flag=True,
               help="Print errors and debugging information.")
 @click.option('--rename', is_flag=True, hidden=True,

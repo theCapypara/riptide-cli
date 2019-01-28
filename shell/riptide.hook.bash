@@ -14,3 +14,7 @@ riptide_prompt_hook() {
 }
 
 PROMPT_COMMAND="riptide_prompt_hook;"$PROMPT_COMMAND
+
+# Autocomplete
+# todo: Does not work correctly yet :(
+eval "$(_RIPTIDE_COMPLETE=source riptide)"

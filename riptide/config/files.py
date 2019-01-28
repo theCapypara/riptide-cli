@@ -24,7 +24,7 @@ def __discover_project_file__step(path):
         return potential_path
     if is_path_root(path):
         return None
-    return __discover_project_file__step(os.path.join(path,'..'))
+    return __discover_project_file__step(os.path.join(path, '..'))
 
 
 def discover_project_file():
@@ -62,6 +62,7 @@ def get_project_meta_folder(project_folder_path):
     if not os.path.exists(path):
         os.mkdir(path)
     return path
+
 
 def get_current_relative_project_path(project_folder_path):
     """

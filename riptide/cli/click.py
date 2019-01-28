@@ -20,13 +20,13 @@ class ClickMainGroup(HelpColorsGroup):
         self.invoke_group_callback(ctx)
         return super().invoke(ctx)
 
-    def get_help(self, ctx):
+    def list_commands(self, ctx):
         """
-        Run group callback before invoking get_help()
+        Run group callback before invoking list_commands() and don't output warnings
         """
         # TODO: This kinda sucks, because other parameters may not available yet and are ignored.
         self.invoke_group_callback(ctx)
-        return super().get_help(ctx)
+        return super().list_commands(ctx)
 
     def format_commands(self, ctx, formatter):
         """

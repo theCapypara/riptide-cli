@@ -11,3 +11,7 @@ if [[ ${chpwd_functions[(I)riptide_cwdir_hook]} -eq 0 ]]; then
 fi
 
 riptide_cwdir_hook
+
+# Autocomplete
+# todo: Does not work correctly yet :(
+eval "$(_RIPTIDE_COMPLETE=source_zsh riptide)"

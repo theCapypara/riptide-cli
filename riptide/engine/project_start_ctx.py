@@ -1,11 +1,12 @@
-"""
-with-Context object that handles functions that need to be
-run before starting or stopping projects
-"""
 from riptide.config.service.ports import PortsConfig
 
 
 class StartCtx:
+    """
+    with-Context object that handles functions that need to be
+    run before starting or stopping projects
+    Must be used by engines in their start_project method.
+    """
     def __init__(self, project):
         self.project = project
 
@@ -22,4 +23,5 @@ class StartCtx:
 
 
 def riptide_start_project_ctx(project):
+    """Returns the start context"""
     return StartCtx(project)

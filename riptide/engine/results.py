@@ -21,7 +21,7 @@ class ResultError(EndResultQueue):
     Marks the end of a ResultQueue and signals an error.
     Is raised if a result queue was ended with an error.
     """
-    def __init__(self, message: str, details: str=None, cause: Exception=None, *args: object, **kwargs: object) -> None:
+    def __init__(self, message: str, details: str = None, cause: Exception = None, *args: object, **kwargs: object) -> None:
         self.message = message
         self.details = details
         self.cause = cause
@@ -118,6 +118,8 @@ class MultiResultQueue(Generic[T]):
             (id_of_queue, result_error_object, True)
 
     The end of iteration is reached when all ResultQueues are ended.
+
+    Can only be iterated once / by one object at the same time.
 
     A list of ids and ResultQueues in it can also be manually retrieved.
     """

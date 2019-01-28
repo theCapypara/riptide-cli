@@ -22,6 +22,8 @@ class RiptideCliError(ClickException):
         self.ctx = ctx
 
     def show(self, file=None):
+        if self.ctx.resilient_parsing:
+            return
         verbose = get_is_verbose(self.ctx) or file is not None
 
         if file is None:

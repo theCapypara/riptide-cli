@@ -49,7 +49,7 @@ def _handle_progress_bar(service_name, status, finished, progress_bars, errors):
         if status:
             # error
             tw = text_width_error()
-            errors.append({"service": service_name, "error": status.cause if status.cause else status})
+            errors.append({"service": service_name, "error": status})
             msg = (status.message[:tw-3] + '...') if len(status.message) > tw-3 else status.message.ljust(tw)
             progress_bars[service_name].bar_format = "{desc}" + msg
             progress_bars[service_name].refresh()

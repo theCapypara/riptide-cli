@@ -98,7 +98,6 @@ def write_project(project, rename, ctx):
     :param project:             Project object
     :param rename:              Rename an existing project entry, if found.
     """
-    # todo: small risk of race conditions here
     projects = load_projects()
 
     # xxx: This doesn't look really nice to understand. Basically, check if the project is

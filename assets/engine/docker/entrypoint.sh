@@ -9,19 +9,29 @@
 # Behaviour is controlled by environment variables.
 #
 # RIPTIDE__DOCKER_NO_STDOUT_REDIRECT:
+#   If set, Riptide will NOT redirect all stdout/stderr output to /riptide_stdout or /riptide_stderr respectively
 #
 # RIPTIDE__DOCKER_USER:
+#   If set, Riptide will try to create a user named "riptide" with this id.
 #
 # RIPTIDE__DOCKER_GROUP:
+#   If this and RIPTIDE__DOCKER_USER are set,
+#   Riptide will try to add a group with this id (named riptide; only if not already exists)
+#   and add $RIPTIDE__DOCKER_USER to this group.
 #
 # RIPTIDE__DOCKER_RUN_MAIN_CMD_AS_USER:
+#   If set, the original entrypoint and command are run via the $RIPTIDE__DOCKER_USER user using su.
 #
 # RIPTIDE__DOCKER_DONT_RUN_CMD:
+#   If set, the command is not run, only the original entrypoint/nothing.
 #
 # RIPTIDE__DOCKER_ORIGINAL_ENTRYPOINT:
+#   Contains the original entrypoint. Can be empty. Will be run and get the command passed
+#   (if RIPTIDE__DOCKER_DONT_RUN_CMD is not set)
 #
 # RIPTIDE__DOCKER_CMD_LOGGING_*:
-#
+#   Command logging.
+#   All the vlaues of these environment variables will be started and their stdout redirected to /cmd_logs/*.
 
 if [ -z "$RIPTIDE__DOCKER_NO_STDOUT_REDIRECT" ]
 then
@@ -44,8 +54,7 @@ done
 # Change the user if requested
 SU_PREFIX=""
 SU_POSTFIX=""
-if [ ! -z "$RIPTIDE__DOCKER_USER" ]
-then
+if [ ! -z "$RIPTIDE__DOCKER_USER" ]; then
     # ADD GROUP
     if ! grep -q $RIPTIDE__DOCKER_GROUP /etc/group; then
         # groupadd might be called addgroup (alpine)
@@ -71,6 +80,7 @@ then
         HOME_DIR=$(eval echo "~$USERNAME")
         usermod -a -G $RIPTIDE__DOCKER_GROUP $USERNAME
         # Symlink the other user directory to /home/riptide
+        mkdir -p /home
         ln -s $HOME_DIR /home/riptide
     fi
     # PREPARE SU COMMAND AND ENV
@@ -82,10 +92,9 @@ then
 fi
 
 # host.riptide.internal is supposed to be routable to the host.
-# windows + mac
 POSSIBLE_IP=$(getent hosts host.docker.internal | awk '{ print $1 }')
-if [ ! -z "$POSSIBLE_IP" ]
-then
+if [ ! -z "$POSSIBLE_IP" ]; then
+    # windows + mac
     echo "$POSSIBLE_IP  host.riptide.internal "  >> /etc/hosts
 else
     # linux
@@ -94,8 +103,7 @@ fi
 
 
 # Run original entrypoint and/or cmd
-if [ -z "RIPTIDE__DOCKER_DONT_RUN_CMD" ]
-then
+if [ -z "RIPTIDE__DOCKER_DONT_RUN_CMD" ]; then
     # Run entrypoint only directly
     eval exec $SU_PREFIX $RIPTIDE__DOCKER_ORIGINAL_ENTRYPOINT $SU_POSTFIX
 else

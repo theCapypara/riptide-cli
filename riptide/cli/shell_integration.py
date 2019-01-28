@@ -9,7 +9,7 @@ from riptide.config.loader import load_config, load_engine
 
 def load_shell_integration(system_config: Config):
     """
-    'Loads' the shell intergration by writing a file containing the project name into the _riptide folder
+    'Loads' the shell integration by writing a file containing the project name into the _riptide folder
     and writing executables for all commands to the bin-folder.
     """
     # Write project name to file
@@ -42,6 +42,7 @@ from riptide.cli.shell_integration import run_cmd
 run_cmd("%s", sys.argv[1:])
 """ % (sys.executable, entry))
 
+        # Make command alias executable
         st = os.stat(path_to_cmd_file)
         os.chmod(path_to_cmd_file, st.st_mode | stat.S_IEXEC)
 
