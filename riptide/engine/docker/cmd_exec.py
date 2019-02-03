@@ -7,7 +7,7 @@ from docker.errors import NotFound, APIError
 from riptide.config.document.project import Project
 from riptide.config.files import CONTAINER_SRC_PATH, get_current_relative_src_path, riptide_assets_dir
 from riptide.engine.abstract import ExecError
-from riptide.engine.docker.cross_platform import cpvolumes
+from riptide.engine.docker.mounts import create_cli_mount_strings
 from riptide.engine.docker.network import get_network_name
 from riptide.engine.docker.service import get_container_name, ENTRYPOINT_CONTAINER_PATH, EENV_RUN_MAIN_CMD_AS_USER, \
     EENV_USER, EENV_GROUP, EENV_NO_STDOUT_REDIRECT, parse_entrypoint
@@ -83,8 +83,7 @@ def cmd(client, project: Project, command_name: str, arguments: List[str]) -> No
     # Add custom entrypoint as volume
     entrypoint_script = os.path.join(riptide_assets_dir(), 'engine', 'docker', 'entrypoint.sh')
     volumes[entrypoint_script] = {'bind': ENTRYPOINT_CONTAINER_PATH, 'mode': 'ro'}
-
-    cpvolumes.optimize_volumes(volumes)
+    mounts = create_cli_mount_strings(volumes)
 
     environment = command_obj.collect_environment()
     # Settings for the entrypoint
@@ -96,8 +95,7 @@ def cmd(client, project: Project, command_name: str, arguments: List[str]) -> No
     image_config = client.api.inspect_image(command_obj["image"])["Config"]
     environment.update(parse_entrypoint(image_config["Entrypoint"]))
 
-    for host, volume in volumes.items():
-        shell += ['-v', host + ':' + volume["bind"] + ':' + volume["mode"]]
+    shell += mounts
 
     for key, value in environment.items():
         shell += ['-e', key + '=' + value]

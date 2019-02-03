@@ -11,7 +11,7 @@ from riptide.config.document.config import Config
 from riptide.config.document.service import Service
 from riptide.config.files import riptide_assets_dir
 from riptide.config.service.ports import find_open_port_starting_at
-from riptide.engine.docker.cross_platform import cpvolumes
+from riptide.engine.docker.mounts import create_mounts
 from riptide.engine.docker.network import get_network_name
 from riptide.engine.results import ResultQueue, ResultError, StartStopResultStep
 from riptide.lib.cross_platform.cpuser import getuid, getgid
@@ -122,8 +122,7 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
             # Add custom entrypoint as volume
             entrypoint_script = os.path.join(riptide_assets_dir(), 'engine', 'docker', 'entrypoint.sh')
             volumes[entrypoint_script] = {'bind': ENTRYPOINT_CONTAINER_PATH, 'mode': 'ro'}
-
-            cpvolumes.optimize_volumes(volumes)
+            mounts = create_mounts(volumes)
 
             # Collect environment variables
             environment = service.collect_environment()
@@ -211,7 +210,7 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
                 group_add=[user_group],
                 hostname=service["$name"],
                 labels=labels,
-                volumes=volumes,
+                mounts=mounts,
                 environment=environment,
                 ports=ports,
                 working_dir=workdir
