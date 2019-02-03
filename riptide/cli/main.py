@@ -79,9 +79,9 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
         db_commands.load(ctx)
         import_commands.load(ctx)
 
-    # Set up zsh/bash integration
-    if "project" in ctx.system_config:
-        load_shell_integration(ctx.system_config)
+        # Set up zsh/bash integration
+        if "project" in ctx.system_config:
+            load_shell_integration(ctx.system_config)
 
 
 @click.group(

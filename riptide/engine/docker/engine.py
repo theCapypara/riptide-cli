@@ -80,6 +80,9 @@ class DockerEngine(AbstractEngine):
         return services
 
     def address_for(self, project: Project, service_name: str) -> Union[None, Tuple[str, int]]:
+        # TODO: Not supported under Mac and Windows in this way. Bind containers to host port instead
+        #       And return docker host ip + bound port here.
+        #       TODO doku BA hin und her!
         container_name = get_container_name(project["name"], service_name)
         network_name = get_network_name(project["name"])
         try:

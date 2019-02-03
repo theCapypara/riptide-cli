@@ -14,7 +14,7 @@ def load(ctx):
 def update(ctx):
     """
     Updates repositories for app, services, etc.
-    Updates the code of all configured repository that are searched for $ref-references.
+    Updates the code of all configured repositories that are searched for $ref-references.
     """
     # todo
     pass

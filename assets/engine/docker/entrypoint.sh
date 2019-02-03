@@ -78,7 +78,7 @@ if [ ! -z "$RIPTIDE__DOCKER_USER" ]; then
         # User already exists
         USERNAME=$(getent passwd "$RIPTIDE__DOCKER_USER" | cut -d: -f1)
         HOME_DIR=$(eval echo "~$USERNAME")
-        usermod -a -G $RIPTIDE__DOCKER_GROUP $USERNAME
+        usermod -a -G $RIPTIDE__DOCKER_GROUP $USERNAME 2> /dev/null # usermod might not exist, in this case we are out of luck :(
         # Symlink the other user directory to /home/riptide
         mkdir -p /home
         ln -s $HOME_DIR /home/riptide

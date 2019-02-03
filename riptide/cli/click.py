@@ -28,6 +28,11 @@ class ClickMainGroup(HelpColorsGroup):
         self.invoke_group_callback(ctx)
         return super().list_commands(ctx)
 
+    def add_command(self, cmd, name=None):
+        """Fixes an issue where Click doesn't update the name of the command which leads to broken autocomplete. https://github.com/pallets/click/issues/1213"""
+        cmd.name = name
+        return super().add_command(cmd, name)
+
     def format_commands(self, ctx, formatter):
         """
         Like multi command's version, but also grouping commands into subsections, if available.

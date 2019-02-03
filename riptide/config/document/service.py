@@ -11,6 +11,8 @@ from riptide.config.service.logging import *
 # todo: validate actual schema values -> better schema | ALL documents
 from riptide.config.service.ports import get_additional_port
 from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
+from riptide.lib.cross_platform import cppath
+from riptide.lib.cross_platform.cpuser import getuid, getgid
 
 
 class Service(YamlConfigDocument):
@@ -53,6 +55,20 @@ class Service(YamlConfigDocument):
 
         if "roles" not in self:
             self.doc["roles"] = []
+
+    def process_vars(self) -> 'YamlConfigDocument':
+        # todo needs to happen after variables have been processed, but we need a cleaner callback for this
+        super().process_vars()
+
+        # Normalize all host-paths to only use the system-type directory separator
+        if "additional_volumes" in self:
+            for obj in self.doc["additional_volumes"]:
+                obj["host"] = cppath.normalize(obj["host"])
+        if "config" in self:
+            for obj in self.doc["config"]:
+                obj["$source"] = cppath.normalize(obj["$source"])
+
+        return self
 
     def before_start(self):
         """Load data required for service start, called by riptide_project_start_ctx()"""
@@ -244,11 +260,11 @@ class Service(YamlConfigDocument):
 
     @variable_helper
     def os_user(self):
-        return str(os.getuid())
+        return str(getuid())
 
     @variable_helper
     def os_group(self):
-        return str(os.getgid())
+        return str(getgid())
 
     @variable_helper
     def host_address(self):

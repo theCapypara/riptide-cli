@@ -1,6 +1,5 @@
 import os
-import pty
-import time
+import riptide.lib.cross_platform.cppty as pty
 from typing import List
 
 from docker.errors import NotFound, APIError
@@ -8,9 +7,11 @@ from docker.errors import NotFound, APIError
 from riptide.config.document.project import Project
 from riptide.config.files import CONTAINER_SRC_PATH, get_current_relative_src_path, riptide_assets_dir
 from riptide.engine.abstract import ExecError
+from riptide.engine.docker.cross_platform import cpvolumes
 from riptide.engine.docker.network import get_network_name
 from riptide.engine.docker.service import get_container_name, ENTRYPOINT_CONTAINER_PATH, EENV_RUN_MAIN_CMD_AS_USER, \
     EENV_USER, EENV_GROUP, EENV_NO_STDOUT_REDIRECT, parse_entrypoint
+from riptide.lib.cross_platform.cpuser import getuid, getgid
 
 
 def service_exec(client, project: Project, service_name: str) -> None:
@@ -20,8 +21,8 @@ def service_exec(client, project: Project, service_name: str) -> None:
     container_name = get_container_name(project["name"], service_name)
     service_obj = project["app"]["services"][service_name]
 
-    user = os.getuid()
-    user_group = os.getgid()
+    user = getuid()
+    user_group = getgid()
 
     try:
         container = client.containers.get(container_name)
@@ -35,7 +36,7 @@ def service_exec(client, project: Project, service_name: str) -> None:
             # Service has source code, set workdir in container to current workdir
             shell += ["-w", CONTAINER_SRC_PATH + "/" + get_current_relative_src_path(project)]
         shell += [container_name, "sh", "-c", "if command -v bash >> /dev/null; then bash; else sh; fi"]
-        pty.spawn(shell)
+        pty.spawn(shell, win_repeat_argv0=True)
 
     except NotFound:
         raise ExecError('The service is not running. Try starting it first.')
@@ -54,8 +55,8 @@ def cmd(client, project: Project, command_name: str, arguments: List[str]) -> No
     if command_name not in project["app"]["commands"]:
         raise ExecError("Command not found.")
 
-    user = os.getuid()
-    user_group = os.getgid()
+    user = getuid()
+    user_group = getgid()
 
     container_name = get_cmd_container_name(project['name'], command_name)
     command_obj = project["app"]["commands"][command_name]
@@ -83,6 +84,8 @@ def cmd(client, project: Project, command_name: str, arguments: List[str]) -> No
     entrypoint_script = os.path.join(riptide_assets_dir(), 'engine', 'docker', 'entrypoint.sh')
     volumes[entrypoint_script] = {'bind': ENTRYPOINT_CONTAINER_PATH, 'mode': 'ro'}
 
+    cpvolumes.optimize_volumes(volumes)
+
     environment = command_obj.collect_environment()
     # Settings for the entrypoint
     environment[EENV_RUN_MAIN_CMD_AS_USER] = "yes"
@@ -104,4 +107,5 @@ def cmd(client, project: Project, command_name: str, arguments: List[str]) -> No
         command_obj["image"],
         command_obj["command"] + " " + " ".join('"{0}"'.format(w) for w in arguments)
     ]
-    pty.spawn(shell)
+
+    pty.spawn(shell, win_repeat_argv0=True)

@@ -4,12 +4,15 @@ from time import sleep
 
 from docker import DockerClient
 from docker.errors import NotFound, APIError, ContainerError
+from json import JSONDecodeError
 
 from riptide.config.document.config import Config
 from riptide.config.document.service import Service
 from riptide.config.files import riptide_assets_dir
+from riptide.engine.docker.cross_platform import cpvolumes
 from riptide.engine.docker.network import get_network_name
 from riptide.engine.results import ResultQueue, ResultError, StartStopResultStep
+from riptide.lib.cross_platform.cpuser import getuid, getgid
 
 NO_START_STEPS = 6
 
@@ -41,8 +44,8 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
     """
     # TODO: FG start
     # TODO: WINDOWS?
-    user = os.getuid()
-    user_group = os.getgid()
+    user = getuid()
+    user_group = getgid()
 
     name = get_container_name(project_name, service["$name"])
     needs_to_be_started = False
@@ -73,11 +76,14 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
                 queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Pulling image... "))
                 image_name_full = service['image'] if ":" in service['image'] else service['image'] + ":latest"
                 for line in client.api.pull(image_name_full, stream=True):
-                    status = json.loads(line)
-                    if "progress" in status:
-                        queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Pulling image... " + status["status"] + " : " + status["progress"]))
-                    else:
-                        queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Pulling image... " + status["status"]))
+                    try:
+                        status = json.loads(line)
+                        if "progress" in status:
+                            queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Pulling image... " + status["status"] + " : " + status["progress"]))
+                        else:
+                            queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Pulling image... " + status["status"]))
+                    except JSONDecodeError:
+                        queue.put(StartStopResultStep(current_step=2, steps=NO_START_STEPS, text="Pulling image... " + str(line)))
             except APIError as err:
                 queue.end_with_error(ResultError("ERROR pulling image.", cause=err))
                 stop(project_name, service["$name"], client)
@@ -98,6 +104,8 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
             # Add custom entrypoint as volume
             entrypoint_script = os.path.join(riptide_assets_dir(), 'engine', 'docker', 'entrypoint.sh')
             volumes[entrypoint_script] = {'bind': ENTRYPOINT_CONTAINER_PATH, 'mode': 'ro'}
+
+            cpvolumes.optimize_volumes(volumes)
 
             # Collect environment variables
             environment = service.collect_environment()
