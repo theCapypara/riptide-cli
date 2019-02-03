@@ -1,5 +1,6 @@
 import json
 import os
+from random import randint
 from time import sleep
 
 from docker import DockerClient
@@ -9,10 +10,16 @@ from json import JSONDecodeError
 from riptide.config.document.config import Config
 from riptide.config.document.service import Service
 from riptide.config.files import riptide_assets_dir
+from riptide.config.service.ports import find_open_port_starting_at
 from riptide.engine.docker.cross_platform import cpvolumes
 from riptide.engine.docker.network import get_network_name
 from riptide.engine.results import ResultQueue, ResultError, StartStopResultStep
 from riptide.lib.cross_platform.cpuser import getuid, getgid
+
+RIPTIDE_DOCKER_LABEL_MAIN = "riptide_main"
+RIPTIDE_DOCKER_LABEL_SERVICE = "riptide_service"
+RIPTIDE_DOCKER_LABEL_PROJECT = "riptide_project"
+RIPTIDE_DOCKER_LABEL_HTTP_PORT = "riptide_port"
 
 NO_START_STEPS = 6
 
@@ -25,6 +32,10 @@ EENV_RUN_MAIN_CMD_AS_USER = "RIPTIDE__DOCKER_RUN_MAIN_CMD_AS_USER"
 EENV_ORIGINAL_ENTRYPOINT = "RIPTIDE__DOCKER_ORIGINAL_ENTRYPOINT"
 EENV_COMMAND_LOG_PREFIX = "RIPTIDE__DOCKER_CMD_LOGGING_"
 EENV_NO_STDOUT_REDIRECT = "RIPTIDE__DOCKER_NO_STDOUT_REDIRECT"
+
+# For services map HTTP main port to a random host port between these ports
+DOCKER_ENGINE_HTTP_PORT_BND_START = 30000
+DOCKER_ENGINE_HTTP_PORT_BND_END   = 31000
 
 
 def start(project_name: str, service: Service, client: DockerClient, queue: ResultQueue):
@@ -43,7 +54,7 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
     :param queue:           ResultQueue to update, or None
     """
     # TODO: FG start
-    # TODO: WINDOWS?
+    # TODO: Function is way to long
     user = getuid()
     user_group = getgid()
 
@@ -89,14 +100,21 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
                 stop(project_name, service["$name"], client)
                 return
 
+        # Get port to bind main HTTP port to
+        main_port = None
+        if "port" in service:
+            main_port = find_open_port_starting_at(randint(DOCKER_ENGINE_HTTP_PORT_BND_START, DOCKER_ENGINE_HTTP_PORT_BND_END))
+
         # Collect labels
         labels = {
-            "riptide_project": project_name,
-            "riptide_service": service["$name"],
-            "riptide_main": "0"
+            RIPTIDE_DOCKER_LABEL_PROJECT: project_name,
+            RIPTIDE_DOCKER_LABEL_SERVICE: service["$name"],
+            RIPTIDE_DOCKER_LABEL_MAIN: "0"
         }
         if "roles" in service and "main" in service["roles"]:
-            labels["riptide_main"] = "1"
+            labels[RIPTIDE_DOCKER_LABEL_MAIN] = "1"
+        if main_port:
+            labels[RIPTIDE_DOCKER_LABEL_HTTP_PORT] = str(main_port)
 
         try:
             # Collect volumes
@@ -123,6 +141,9 @@ def start(project_name: str, service: Service, client: DockerClient, queue: Resu
 
             # Collect (and process!) additional_ports
             ports = service.collect_ports()
+            # Add main http port binding
+            if main_port:
+                ports[service["port"]] = main_port
 
             # Change user?
             user_param = None if service["run_as_root"] else user

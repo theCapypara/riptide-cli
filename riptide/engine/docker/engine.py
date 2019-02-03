@@ -10,7 +10,7 @@ from riptide.config.document.project import Project
 from riptide.engine.abstract import AbstractEngine
 from riptide.engine.docker import network, service
 from riptide.engine.docker.network import get_network_name
-from riptide.engine.docker.service import get_container_name
+from riptide.engine.docker.service import get_container_name, RIPTIDE_DOCKER_LABEL_HTTP_PORT
 from riptide.engine.project_start_ctx import riptide_start_project_ctx
 from riptide.engine.results import StartStopResultStep, MultiResultQueue, ResultQueue, ResultError
 from riptide.engine.docker.cmd_exec import service_exec, cmd
@@ -80,21 +80,19 @@ class DockerEngine(AbstractEngine):
         return services
 
     def address_for(self, project: Project, service_name: str) -> Union[None, Tuple[str, int]]:
-        # TODO: Not supported under Mac and Windows in this way. Bind containers to host port instead
-        #       And return docker host ip + bound port here.
         #       TODO doku BA hin und her!
+        if "port" not in project["app"]["services"][service_name]:
+            return None
+
         container_name = get_container_name(project["name"], service_name)
-        network_name = get_network_name(project["name"])
         try:
-            ip = self.client.api.inspect_container(container_name)['NetworkSettings']['Networks'][network_name]['IPAddress']
+            container = self.client.containers.get(container_name)
+            port = container.labels[RIPTIDE_DOCKER_LABEL_HTTP_PORT]
+            return "127.0.0.1", port
         except KeyError:
             return None
         except APIError:
             return None
-        if ip == "" or "port" not in project["app"]["services"][service_name]:
-            return None
-        port = project["app"]["services"][service_name]["port"]
-        return ip, port
 
     def cmd(self, project: Project, command_name: str, arguments: List[str]) -> None:
         # Start network

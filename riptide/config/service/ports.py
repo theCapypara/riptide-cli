@@ -48,11 +48,26 @@ def _is_open(current_port, list_reserved_ports):
         return sock.connect_ex(('127.0.0.1', current_port)) == 0
 
 
+def find_open_port_starting_at(start_port):
+    """
+    Finds the first free port starting at start_port for the service
+    and returns an open port not reserved by riptide or another application
+    Used by additional ports logic (get_additional_port), may be used by other system parts.
+    """
+    port_cfg = PortsConfig.get()
+    port_found = False
+    current_port = start_port
+    while not port_found:
+        if _is_open(current_port, port_cfg["ports"]):
+            return current_port
+        current_port += 1
+
+
 def get_additional_port(project, service, start_port):
     """
     Finds the first free port starting at start_port for the service
     and returns a unique port binding, not used by any other riptide service
-    to use.
+    to use. Looks if a additional port binding exists in for this service, first.
     While assigning, ports that are used by another program (TCP) are also skipped.
     """
     existing = get_existing_port_mapping(project, service, start_port, load=False)
@@ -60,22 +75,17 @@ def get_additional_port(project, service, start_port):
         return existing
 
     port_cfg = PortsConfig.get()
+    port = find_open_port_starting_at(start_port)
 
-    port_found = False
-    current_port = start_port
-    while not port_found:
-        if _is_open(current_port, port_cfg["ports"]):
-            # Port is open, reserve it!
-            dict_merge(port_cfg["requests"], {
-                project["name"]: {
-                    service["$name"]: {
-                        str(start_port): current_port
-                    }
-                }
-            })
-            port_cfg["ports"][str(current_port)] = True
-            return current_port
-        current_port += 1
+    # Port is open, reserve it!
+    dict_merge(port_cfg["requests"], {
+        project["name"]: {
+            service["$name"]: {
+                str(start_port): port
+            }
+        }
+    })
+    port_cfg["ports"][str(port)] = True
 
 
 def get_existing_port_mapping(project, service, start_port, load=True):
