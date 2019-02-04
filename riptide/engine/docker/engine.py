@@ -5,11 +5,12 @@ from typing import Tuple, Dict, Union, List
 
 from docker.errors import APIError
 
+from riptide.config.document.command import Command
 from riptide.config.document.config import Config
 from riptide.config.document.project import Project
-from riptide.engine.abstract import AbstractEngine
-from riptide.engine.docker import network, service
-from riptide.engine.docker.network import get_network_name
+from riptide.engine.abstract import AbstractEngine, ExecError
+from riptide.engine.docker import network, service, path_utils
+from riptide.engine.docker.cmd_detached import cmd_detached
 from riptide.engine.docker.service import get_container_name, RIPTIDE_DOCKER_LABEL_HTTP_PORT
 from riptide.engine.project_start_ctx import riptide_start_project_ctx
 from riptide.engine.results import StartStopResultStep, MultiResultQueue, ResultQueue, ResultError
@@ -111,3 +112,16 @@ class DockerEngine(AbstractEngine):
             self.client.ping()
         except Exception as err:
             raise ConnectionError("Connection with Docker Daemon failed") from err
+
+    def cmd_detached(self, project: 'Project', command: 'Command', run_as_root=False):
+        # Start network
+        network.start(self.client, project["name"])
+        command.parent_doc = project["app"]
+
+        return cmd_detached(self.client, project, command, run_as_root)
+
+    def path_rm(self, path, project: 'Project'):
+        return path_utils.rm(self, path, project)
+
+    def path_copy(self, fromm, to, project: 'Project'):
+        return path_utils.copy(self, fromm, to, project)

@@ -1,6 +1,9 @@
+import os
+import shutil
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict, Union, List
 
+from riptide.config.files import path_in_project
 from riptide.engine.results import StartStopResultStep, MultiResultQueue
 
 
@@ -64,6 +67,19 @@ class AbstractEngine(ABC):
         """
 
     @abstractmethod
+    def cmd_detached(self, project: 'Project', command: 'Command', run_as_root=False) -> (int, str):
+        """
+        Execute the command in the project environment and
+        return the exit code (int), stdout/stderr of the command (str).
+        Src/Current working directory is not mounted.
+        Returns when finished.
+        :param run_as_root: Force execution of the command container with the highest possible permissions
+        :param project: 'Project'
+        :param command: Command Command to run. May not be part of the passed project object but must be treated as such.
+        :return:
+        """
+
+    @abstractmethod
     def exec(self, project: 'Project', service_name: str) -> None:
         """
         Open an interactive shell into service_name and attach stdout/stdin/stderr.
@@ -73,6 +89,39 @@ class AbstractEngine(ABC):
         :return:
         """
         pass
+
+    def path_rm(self, path, project: 'Project'):
+        """
+        Delete a path. Default is using python builtin functions.
+        PATH MUST BE WITHIN PROJECT.
+
+        path was created using an engine service or command.
+        If paths created with this engine may not be writable with the user calling riptide,
+        override this method to remove the folder using elevated rights (eg. running a Docker container as root).
+
+        Returns without an exception if the path was moved (or didn't exist).
+        """
+        if not path_in_project(path, project):
+            raise PermissionError("Tried to delete a file/directory that is not within the project: %s" % path)
+        if os.path.isfile(path):
+            os.remove(path)
+        else:
+            shutil.rmtree(path)
+
+    def path_copy(self, fromm, to, project: 'Project'):
+        """
+        Copy a path. Default is using python builtin functions. 'to' may not exist already.
+        TO PATH MUST BE WITHIN PROJECT.
+
+        See notes at path_rm
+        Returns without an exception if the path was copied.
+        """
+        if not path_in_project(to, project):
+            raise PermissionError("Tried to copy into a path that is not within the project: %s -> %s" % fromm, to)
+        if os.path.isfile(fromm):
+            shutil.copy(fromm, to)
+        else:
+            shutil.copytree(fromm, to)
 
     @abstractmethod
     def supports_exec(self):

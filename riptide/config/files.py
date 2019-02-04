@@ -86,3 +86,8 @@ def get_current_relative_src_path(project):
 
 def remove_all_special_chars(string):
     return re.sub(r"[^a-zA-Z0-9]", "-", string)
+
+
+def path_in_project(path, project):
+    """Check if a path is within a project (a subdirectory of it. Symlinks are ignored)."""
+    return path.startswith(os.path.abspath(project.folder()) + os.sep)

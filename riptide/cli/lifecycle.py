@@ -1,10 +1,11 @@
 import os
 from typing import Union, List
 
+import traceback
 from click import echo, style
 from tqdm import tqdm
 
-from riptide.cli.helpers import RiptideCliError, TAB
+from riptide.cli.helpers import RiptideCliError, TAB, get_is_verbose
 from riptide.engine.status import status_for
 
 
@@ -143,8 +144,12 @@ async def stop_project(ctx, services: Union[List[str], None], show_status=True):
         status_project(ctx)
 
 
-def status_project(ctx):
-    """ Shows the status of Riptide and the loaded project (if any) by collecting data from the engine. """
+def status_project(ctx, limit_services=None):
+    """
+    Shows the status of Riptide and the loaded project (if any) by collecting data from the engine.
+    :type limit_services: None or List that includes names of services to show status for
+
+    """
     echo("Status:")
     engine = ctx.parent.engine
     system_config = ctx.parent.system_config
@@ -157,6 +162,8 @@ def status_project(ctx):
         echo(TAB + style('No project found.', fg='yellow'))
     else:
         for name, status in status_for(project, engine, ctx.parent.system_config).items():
+            if limit_services and name not in limit_services:
+                continue
             echo(TAB + style(name + ':', fg='green' if status.running else 'red', bold=True))
             if not status.running:
                 echo(TAB + TAB + 'Not running.')

@@ -10,6 +10,7 @@ from riptide.config.service.logging import *
 
 # todo: validate actual schema values -> better schema | ALL documents
 from riptide.config.service.ports import get_additional_port
+from riptide.db.driver import db_driver_for_service
 from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
 from riptide.lib.cross_platform import cppath
 from riptide.lib.cross_platform.cpuser import getuid, getgid
@@ -24,8 +25,9 @@ class Service(YamlConfigDocument):
             parent: 'YamlConfigDocument' = None,
             already_loaded_docs: List[str] = None
     ):
+        self._db_driver = None
+        self._loaded_port_mappings = None
         super().__init__(document, path, parent, already_loaded_docs)
-        self.loaded_port_mappings = None
 
     def _initialize_data(self):
         """ Load the absolute path of the config documents specified in config[]["from"]"""
@@ -56,6 +58,25 @@ class Service(YamlConfigDocument):
         if "roles" not in self:
             self.doc["roles"] = []
 
+        if "additional_ports" not in self:
+            self.doc["additional_ports"] = []
+
+        if "db" in self["roles"]:
+            self._db_driver = db_driver_for_service.get(self)
+            # Collect additional ports for the db driver
+            self["additional_ports"] += self._db_driver.collect_additional_ports()
+
+    def validate(self) -> bool:
+        if not super().validate():
+            return False
+
+        # Db Driver constraints. If role db is set, a "driver" has to be set and code has to exist for it.
+        if "db" in self["roles"]:
+            if "driver" not in self or self._db_driver is None:
+                raise ValueError("Service %s validation: If a service has the role 'db' it has to have a valid "
+                                 "'driver' entry with a driver that is available." % self["$name"])
+            self._db_driver.validate_service()
+
     def process_vars(self) -> 'YamlConfigDocument':
         # todo needs to happen after variables have been processed, but we need a cleaner callback for this
         super().process_vars()
@@ -74,10 +95,10 @@ class Service(YamlConfigDocument):
         """Load data required for service start, called by riptide_project_start_ctx()"""
         # Collect ports
         project = self.get_project()
-        self.loaded_port_mappings = {}
-        if "additional_ports" in self:
-            for port_request in self["additional_ports"]:
-                self.loaded_port_mappings[port_request["container"]] = get_additional_port(project, self, port_request["host_start"])
+        self._loaded_port_mappings = {}
+
+        for port_request in self["additional_ports"]:
+            self._loaded_port_mappings[port_request["container"]] = get_additional_port(project, self, port_request["host_start"])
 
     @classmethod
     def header(cls) -> str:
@@ -130,7 +151,7 @@ class Service(YamlConfigDocument):
                 # db only
                 Optional('driver'): {
                     'name': str,
-                    'access': any  # defined by driver
+                    'config': any  # defined by driver
                 }
             }
         )
@@ -186,9 +207,9 @@ class Service(YamlConfigDocument):
                     logging_command_stdout = get_command_logging_container_path(name)
                     volumes[logging_host_path] = {'bind': logging_command_stdout, 'mode': 'rw'}
 
-        db_driver = self.get_db_driver()
-        if db_driver:
-            volumes.update(db_driver.collect_volumes())
+        # db driver
+        if self._db_driver:
+            volumes.update(self._db_driver.collect_volumes())
 
         # additional_volumes
         if "additional_volumes" in self:
@@ -216,6 +237,11 @@ class Service(YamlConfigDocument):
         if "environment" in self:
             for name, value in self["environment"].items():
                 env[name] = value
+
+        # db driver
+        if self._db_driver:
+            env.update(self._db_driver.collect_environment())
+
         return env
 
     def collect_ports(self):
@@ -230,14 +256,11 @@ class Service(YamlConfigDocument):
         """
         # This is already loaded in before_start. Make sure to use riptide_start_project_ctx
         # when starting if this is None
-        return self.loaded_port_mappings
-
-    def get_db_driver(self):
-        """TODO"""
-        pass
+        return self._loaded_port_mappings
 
     @variable_helper
     def volume_path(self):
+        """Returns the path to a service-unique directory for storing container data"""
         path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'data', self["$name"])
         os.makedirs(path, exist_ok=True)
         return path
