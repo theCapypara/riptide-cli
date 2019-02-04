@@ -1,5 +1,5 @@
 import click
-from click import echo
+from click import echo, style
 
 from riptide.cli.helpers import cli_section, async_command, RiptideCliError, TAB
 from riptide.cli.lifecycle import start_project, stop_project
@@ -16,7 +16,7 @@ def load(ctx):
         ctx.command.add_command(cmd,      'cmd')
         if ctx.engine.supports_exec():
             ctx.command.add_command(exec_cmd, 'exec')
-        if "installation_notice_text" in ctx.system_config["project"]["app"]:
+        if "notices" in ctx.system_config["project"]["app"]:
             ctx.command.add_command(notes,    'notes')
 
 
@@ -77,8 +77,16 @@ async def restart(ctx, services):
 @click.command()
 @click.pass_context
 def notes(ctx):
-    """ Shows the installation notice. """
-    echo(ctx.system_config["project"]["app"]["installation_notice_text"])
+    """ Shows installation and usage notices for this app. """
+    notes = ctx.parent.system_config["project"]["app"]["notices"]
+    if 'installation' in notes:
+        echo(style("Installation notice:", bold=True))
+        echo(notes['installation_from_zero'])
+
+    echo()
+    if 'usage' in notes:
+        echo(style("General usage notice:", bold=True))
+        echo(notes['usage'])
 
 
 @cli_section("CLI")

@@ -35,7 +35,7 @@ async def db(ctx, file):
 @click.pass_context
 def files(ctx, key, path_to_import):
     """
-    Import file(s).
+    Imports file(s).
     To import specify a key to import (import keys; see project configuration)
     and the path to a file or directory to import.
     If the target already exists and isn't a directory, copying will fail

@@ -19,7 +19,10 @@ class App(YamlConfigDocument):
             {
                 Optional('$ref'): str,  # reference to other App documents
                 'name': str,
-                Optional('installation_notice_text'): str,
+                Optional('notices'): {
+                    Optional('usage'): str,
+                    Optional('installation'): str
+                },
                 Optional('import'): {
                     str: {
                         'target': str,
