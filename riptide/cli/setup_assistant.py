@@ -57,8 +57,8 @@ async def setup_assistant(ctx, force, skip):
             echo()
             echo()
             echo(style("> NEW PROJECT", bg='cyan', fg='white'))
-            echo("Okay! Riptide can't guide you through the installation automatically, "
-                 "please read these notes on how to run a first-time-installation for %s." % project["app"]["name"])
+            echo("Okay! Riptide can't guide you through the installation automatically.")
+            echo("Please read these notes on how to run a first-time-installation for %s." % project["app"]["name"])
             echo()
             echo(style("Installation instructions:", bold=True))
             echo(TAB + project["app"]["notices"]["installation"])
@@ -116,7 +116,7 @@ async def setup_assistant(ctx, force, skip):
             echo(TAB + style("> FILE IMPORT", bg='cyan', fg='white'))
             for key, entry in project['app']['import'].items():
                 echo(TAB + TAB + style("> %s IMPORT" % key, bg='cyan', fg='white'))
-                echo("Do you wish to import %s (%s) to <project>/%s? [Y/n] " % (entry['name'], key, entry['target']), nl=False)
+                echo("Do you wish to import %s to <project>/%s? [Y/n] " % (entry['name'], entry['target']), nl=False)
                 if getchar().lower() != 'n':
                     # Import files
                     echo()
