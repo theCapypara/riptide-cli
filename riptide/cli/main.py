@@ -13,6 +13,8 @@ from riptide.cli.command.base import COMMAND_CREATE_CONFIG_USER
 
 from riptide.cli.helpers import RiptideCliError, warn
 from riptide.cli.shell_integration import load_shell_integration
+from riptide.config.files import get_project_meta_folder, RIPTIDE_PROJECT_SETUP_FLAG_FILENAME, \
+    get_project_setup_flag_path
 from riptide.config.loader import load_config, load_engine
 from riptide.config.loader import write_project
 
@@ -58,6 +60,9 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
         else:
             # Write project name -> path mapping into projects.json file.
             write_project(ctx.system_config["project"], rename, ctx)
+
+            # Check if project setup command was run yet.
+            ctx.project_is_set_up = os.path.exists(get_project_setup_flag_path(ctx.system_config["project"].folder()))
         # Load engine
         try:
             ctx.engine = load_engine(ctx.system_config["engine"])

@@ -3,6 +3,7 @@ from click import echo, style
 
 from riptide.cli.helpers import cli_section, async_command, RiptideCliError, TAB
 from riptide.cli.lifecycle import start_project, stop_project
+from riptide.cli.setup_assistant import setup_assistant
 from riptide.engine.abstract import ExecError
 
 
@@ -14,6 +15,7 @@ def load(ctx):
         ctx.command.add_command(stop,     'stop')
         ctx.command.add_command(restart,  'restart')
         ctx.command.add_command(cmd,      'cmd')
+        ctx.command.add_command(setup,    'setup')
         if ctx.engine.supports_exec():
             ctx.command.add_command(exec_cmd, 'exec')
         if "notices" in ctx.system_config["project"]["app"]:
@@ -27,6 +29,8 @@ def load(ctx):
 @async_command
 async def start(ctx, services):
     """ Starts services. """
+    if not ctx.parent.project_is_set_up:
+        return please_set_up()
     if services is not None:
         services = services.split(",")
     await start_project(ctx, services)
@@ -45,6 +49,8 @@ async def start_fg(ctx, service, services):
     <service> is instead started separately after the rest in foreground mode. Stdin/Stdout/Stderr are attached
     to this service and not written to their log files, even if stdout/stderr logging is enabled for the service.
     """
+    if not ctx.parent.project_is_set_up:
+        return please_set_up()
     # todo
 
 
@@ -55,6 +61,8 @@ async def start_fg(ctx, service, services):
 @async_command
 async def stop(ctx, services):
     """ Stops services. """
+    if not ctx.parent.project_is_set_up:
+        return please_set_up()
     if services is not None:
         services = services.split(",")
     await stop_project(ctx, services)
@@ -67,13 +75,15 @@ async def stop(ctx, services):
 @async_command
 async def restart(ctx, services):
     """ Stops and then starts services. """
+    if not ctx.parent.project_is_set_up:
+        return please_set_up()
     if services is not None:
         services = services.split(",")
     await stop_project(ctx, services, show_status=False)
     await start_project(ctx, services)
 
 
-@cli_section("Misc")
+@cli_section("Project")
 @click.command()
 @click.pass_context
 def notes(ctx):
@@ -104,6 +114,8 @@ def cmd(ctx, command, arguments, list):
     will be executed inside of this directory. Otherwise the command will be executed in the root
     of the 'src' directory. All commands are executed as the current user + group.
     """
+    if not ctx.parent.project_is_set_up:
+        return please_set_up()
     project = ctx.parent.system_config["project"]
     engine = ctx.parent.engine
 
@@ -149,6 +161,8 @@ def exec_cmd(ctx, service):
     will be executed inside of this directory. Otherwise the shell will be executed in the root
     of the 'src' directory. Shell is executed as the current user + group (may be named differently inside the container).
     """
+    if not ctx.parent.project_is_set_up:
+        return please_set_up()
     project = ctx.parent.system_config["project"]
     engine = ctx.parent.engine
 
@@ -161,3 +175,25 @@ def exec_cmd(ctx, service):
         engine.exec(project, service)
     except ExecError as err:
         raise RiptideCliError(str(err), ctx) from err
+
+
+@cli_section("Project")
+@click.command()
+@click.pass_context
+@click.option('-f', '--force', is_flag=True, help='Force setup, even if it was already run.')
+@click.option('-s', '--skip', is_flag=True, help="Mark project as set up, don't ask any interactive questions")
+@async_command
+async def setup(ctx, force, skip):
+    """
+    Run the initial interactive project setup.
+    Guides you through the initial installation of the project
+    and through importing already existing project data.
+    """
+    await setup_assistant(ctx, force, skip)
+
+
+def please_set_up():
+    echo(style("Thanks for using Riptide! You seem to be working with a new project.\n"
+               "Please run the ", fg='yellow')
+         + style("setup", bold=True, fg='yellow')
+         + style(" command first.", fg='yellow'))

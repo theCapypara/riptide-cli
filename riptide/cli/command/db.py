@@ -203,22 +203,29 @@ async def importt_impl(ctx, file):
     env_name = dbenv.currently_selected_name()
     db_driver = db_driver_for_service.get(dbenv.db_service)
 
+    if not file or file == "":
+        raise RiptideCliError("Please specify a path.", ctx)
+
+    if not os.path.exists(os.path.abspath(file)):
+        raise RiptideCliError("The path does not exist.", ctx)
+
     # 1. If not running, start database
     was_running = engine.status(project, ctx.parent.system_config)[db_name]
     if not was_running:
         await start_project(ctx, [db_name], show_status=False)
 
     # 2. Import
-    echo("Importing into %s... this may take a while..." % env_name)
+    echo("Importing into database environment %s... this may take a while..." % env_name)
     try:
         db_driver.importt(engine, os.path.abspath(file))
         echo()
-        echo("Environment %s imported." % env_name)
+        echo("Database environment %s imported." % env_name)
         echo()
+        return True
     except FileNotFoundError:
         raise RiptideCliError("Environment does not exist. Create it first with db:create", ctx)
     except Exception as ex:
-        raise RiptideCliError("Error importing environment", ctx) from ex
+        raise RiptideCliError("Error importing database environment", ctx) from ex
 
 
 @cli_section("Database")

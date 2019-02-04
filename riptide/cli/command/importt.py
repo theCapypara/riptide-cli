@@ -41,6 +41,10 @@ def files(ctx, key, path_to_import):
     If the target already exists and isn't a directory, copying will fail
     If the target directory already exists, existing files will not be removed.
     """
+    files_impl(ctx, key, path_to_import)
+
+
+def files_impl(ctx, key, path_to_import):
     project = ctx.parent.system_config["project"]
 
     if key not in project["app"]["import"]:

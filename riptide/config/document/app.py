@@ -26,7 +26,7 @@ class App(YamlConfigDocument):
                 Optional('import'): {
                     str: {
                         'target': str,
-                        'description': str
+                        'name': str
                     }
                 },
                 'services': {

@@ -47,7 +47,6 @@ class AbstractDbDriver(ABC):
         """
         pass
 
-
     @abstractmethod
     def collect_environment(self):
         """
@@ -55,3 +54,11 @@ class AbstractDbDriver(ABC):
         For format :see: Service.collect_environment
         """
         pass
+
+    @abstractmethod
+    def ask_for_import_file(self):
+        """
+        Return a prompt to show the user in an CLI/GUI that prompts them to enter
+        the path to the import file/directory.
+        :return:
+        """

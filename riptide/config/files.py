@@ -4,6 +4,7 @@ from appdirs import user_config_dir
 
 RIPTIDE_PROJECT_CONFIG_NAME = 'riptide.yml'
 RIPTIDE_PROJECT_META_FOLDER_NAME = '_riptide'
+RIPTIDE_PROJECT_SETUP_FLAG_FILENAME = '.setup_flag'
 
 # The path of the source code to be mounted INSIDE the containers
 CONTAINER_SRC_PATH = '/src'
@@ -64,6 +65,14 @@ def get_project_meta_folder(project_folder_path):
     if not os.path.exists(path):
         os.mkdir(path)
     return path
+
+
+def get_project_setup_flag_path(project_folder_path):
+    """Returns the path to the file acting as flag to mark whether the project was set up or not."""
+    return os.path.join(
+        get_project_meta_folder(project_folder_path),
+        RIPTIDE_PROJECT_SETUP_FLAG_FILENAME
+    )
 
 
 def get_current_relative_project_path(project_folder_path):

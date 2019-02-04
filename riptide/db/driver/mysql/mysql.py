@@ -17,6 +17,9 @@ PORT = 3306
 class MySQLDbDriver(AbstractDbDriver):
     """Database driver for 'mysql' Docker images."""
 
+    def ask_for_import_file(self):
+        return "Enter the path to the SQL file."
+
     def validate_service(self) -> bool:
         """
         A mysql database driver may only be used with 'mysql' images.
