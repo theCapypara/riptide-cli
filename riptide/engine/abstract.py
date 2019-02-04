@@ -3,6 +3,8 @@ import shutil
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict, Union, List
 
+from distutils.dir_util import copy_tree
+
 from riptide.config.files import path_in_project
 from riptide.engine.results import StartStopResultStep, MultiResultQueue
 
@@ -119,9 +121,9 @@ class AbstractEngine(ABC):
         if not path_in_project(to, project):
             raise PermissionError("Tried to copy into a path that is not within the project: %s -> %s" % fromm, to)
         if os.path.isfile(fromm):
-            shutil.copy(fromm, to)
+            shutil.copy2(fromm, to)
         else:
-            shutil.copytree(fromm, to)
+            copy_tree(fromm, to)
 
     @abstractmethod
     def supports_exec(self):

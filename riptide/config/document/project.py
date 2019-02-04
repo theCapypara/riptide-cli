@@ -22,17 +22,6 @@ class Project(YamlConfigDocument):
                 Optional('$path'): str,  # Path to the project file, added by system after loading.
                 'name': str,
                 'src': str,
-                Optional('import'): {
-                    Optional('db'): {
-                        'source': str
-                    },
-                    Optional('folders'): {
-                        str: {
-                            'target': str,
-                            'source': str
-                        }
-                    }
-                },
                 'app': DocReference(App)
             }
         )

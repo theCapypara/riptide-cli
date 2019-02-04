@@ -192,6 +192,10 @@ async def importt(ctx, file):
     Import a database dump into the active environment.
     The format of the dump depends on the database driver.
     """
+    await importt_impl(ctx, file)
+
+
+async def importt_impl(ctx, file):
     project = ctx.parent.system_config["project"]
     engine = ctx.parent.engine
     dbenv = DbEnvironments(project, engine)
