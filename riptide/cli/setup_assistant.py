@@ -143,3 +143,4 @@ async def setup_assistant(ctx, force, skip):
         echo("All files were imported. You are now ready to use Riptide!")
         echo("You can now start the project with the start command.")
         echo("Make sure to read the manual if you have any questions.")
+        open(get_project_setup_flag_path(project.folder()), 'a').close()
