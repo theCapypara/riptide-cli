@@ -88,6 +88,8 @@ class DockerEngine(AbstractEngine):
         container_name = get_container_name(project["name"], service_name)
         try:
             container = self.client.containers.get(container_name)
+            if container.status == "exited":
+                return None
             port = container.labels[RIPTIDE_DOCKER_LABEL_HTTP_PORT]
             return "127.0.0.1", port
         except KeyError:
