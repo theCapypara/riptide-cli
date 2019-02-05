@@ -209,7 +209,12 @@ class Service(YamlConfigDocument):
 
         # db driver
         if self._db_driver:
-            volumes.update(self._db_driver.collect_volumes())
+            db_driver_volumes = self._db_driver.collect_volumes()
+            for vol in db_driver_volumes.keys():
+                # Create db driver volumes as directories if they don't exist yet
+                os.makedirs(vol, exist_ok=True)
+            volumes.update(db_driver_volumes)
+
 
         # additional_volumes
         if "additional_volumes" in self:
@@ -223,6 +228,8 @@ class Service(YamlConfigDocument):
 
                 mode = vol["mode"] if "mode" in vol else "rw"
                 volumes[vol["host"]] = {'bind': vol["container"], 'mode': mode}
+                # Create additional volumes as directories if they don't exist yet
+                os.makedirs(vol["host"], exist_ok=True)
 
         return volumes
 
@@ -262,7 +269,6 @@ class Service(YamlConfigDocument):
     def volume_path(self):
         """Returns the path to a service-unique directory for storing container data"""
         path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'data', self["$name"])
-        os.makedirs(path, exist_ok=True)
         return path
 
     @variable_helper
