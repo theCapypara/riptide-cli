@@ -14,8 +14,8 @@ def load(ctx):
     """Adds import commands to the CLI"""
     if "project" in ctx.system_config and DbEnvironments.has_db(ctx.system_config["project"]):
         ctx.command.add_command(db,  'import:db')
-    if "import" in ctx.system_config["project"]["app"]:
-        ctx.command.add_command(files,     'import:files')
+        if "import" in ctx.system_config["project"]["app"]:
+            ctx.command.add_command(files,     'import:files')
 
 
 @cli_section("Import")

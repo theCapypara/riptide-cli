@@ -4,13 +4,14 @@ import os
 from click import echo
 
 from riptide.cli.helpers import RiptideCliError
+from riptide.config import repositories
 from riptide.config.document.config import Config
 from riptide.config.document.project import Project
 from riptide.config.files import discover_project_file, riptide_main_config_file, riptide_projects_file
 from riptide.engine.docker.engine import DockerEngine
 
 
-def load_config(project_file=None):
+def load_config(project_file=None, update_repositories=False, update_func=lambda msg: None):
     """
     Loads the specified project file and the system user configuration.
     If no project file is specified, it is auto-detected.
@@ -19,7 +20,9 @@ def load_config(project_file=None):
     config will not exist. If the system config itself could not be found,
     a FileNotFound error is raised.
 
-    :param project_file: project file to load or none
+    :param project_file: string project file to load or none
+    :param update_repositories: Update repositories defined in system config
+    :param update_func: If update_repositories is set: Function to execute for status updates of repository updating
     :return: config.document.config.Config object.
     :raises: FileNotFoundError if the system config was not found
     :raises: schema.SchemaError on validation errors
@@ -39,14 +42,18 @@ def load_config(project_file=None):
     if "project" in system_config:
         del system_config["project"]
 
+    # Update repositories
+    if update_repositories:
+        repositories.update(system_config, update_func)
+    repos = repositories.collect(system_config)
+
     if project_path is not None:
         project_path = os.path.abspath(project_path)
         try:
             project_config = Project.from_yaml(project_path)
             project_config["$path"] = project_path
 
-            # TODO: Translate repos. Da sollen später git repos stehen, nicht direkt pfade.
-            project_config.resolve_and_merge_references(system_config["repos"])
+            project_config.resolve_and_merge_references(repos)
 
             system_config["project"] = project_config
             project_config.parent_doc = system_config

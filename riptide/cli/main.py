@@ -1,17 +1,18 @@
 import os
+import sys
 
 import click
 from click import echo
 
+from configcrunch import ReferencedDocumentNotFound
 from riptide.cli.click import ClickMainGroup
 from riptide.cli.command import base as base_commands
 from riptide.cli.command import db as db_commands
 from riptide.cli.command import importt as import_commands
 from riptide.cli.command import project as project_commands
-from riptide.cli.command import repo as repo_commands
 from riptide.cli.command.base import COMMAND_CREATE_CONFIG_USER
 
-from riptide.cli.helpers import RiptideCliError, warn
+from riptide.cli.helpers import RiptideCliError, warn, TAB
 from riptide.cli.shell_integration import load_shell_integration
 from riptide.config.files import get_project_meta_folder, RIPTIDE_PROJECT_SETUP_FLAG_FILENAME, \
     get_project_setup_flag_path
@@ -34,23 +35,31 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
     """
     ctx.riptide_options = {
         "project": None,
-        "verbose": False
+        "verbose": False,
+        "update": False
     }
     ctx.riptide_options.update(kwargs)
 
     # TODO: Refactoring arguments, and better verbose (use everywhere).
-    # todo: load git repos if not fast
 
     # Load the system config (and project).
     ctx.system_config = None
     try:
-        ctx.system_config = load_config(project)
+        ctx.system_config = load_config(project, update_repositories=ctx.riptide_options['update'], update_func=lambda msg: echo(msg))
     except FileNotFoundError:
         # Don't show this if the user may have called the command. Since we don't know the invoked command at this
         # point, we just check if the name of the command is anywhere in the protected_args
         if COMMAND_CREATE_CONFIG_USER not in ctx.protected_args and not ctx.resilient_parsing:
             warn("You don't have a configuration file for Riptide yet. Use %s to create one." % COMMAND_CREATE_CONFIG_USER)
             echo()
+    except ReferencedDocumentNotFound as ex:
+        rerun_note = ""
+        # if the update parameter was not provided, tell user to rerun with update parameter
+        if not ctx.riptide_options['update']:
+            args = sys.argv.copy()
+            args.insert(1, '--update')
+            rerun_note = "\nMake sure your repositories are up to date, by re-running this command with --update:\n" + TAB + TAB + " ".join(args)
+        raise RiptideCliError("Failed to find a referenced ($ref) document." + rerun_note, ctx) from ex
     except Exception as ex:
         raise RiptideCliError('Error parsing the system or project configuration.', ctx) from ex
     else:
@@ -79,7 +88,6 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
     # Load sub commands
     base_commands.load(ctx)
     if ctx.system_config is not None:
-        repo_commands.load(ctx)
         project_commands.load(ctx)
         db_commands.load(ctx)
         import_commands.load(ctx)
@@ -99,6 +107,8 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
               help="Path to the project file, if not given, the file will be located automatically.")
 @click.option('-v', '--verbose', is_flag=True,
               help="Print errors and debugging information.")
+@click.option('-u', '--update', is_flag=True,
+              help="Update repositories before executing the command.")
 @click.option('--rename', is_flag=True, hidden=True,
               help="If project with this name already exists at different location, rename it to use this location.")
 @click.pass_context

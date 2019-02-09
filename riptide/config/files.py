@@ -51,6 +51,10 @@ def riptide_ports_config_file():
     return os.path.join(riptide_config_dir(), 'ports.json')
 
 
+def riptide_local_repositories_path():
+    return os.path.join(riptide_config_dir(), 'repos')
+
+
 def riptide_config_dir():
     return user_config_dir('riptide', False)
 
