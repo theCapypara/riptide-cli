@@ -4,7 +4,8 @@ import sys
 
 from riptide.config.document.config import Config
 from riptide.config.files import get_project_meta_folder
-from riptide.config.loader import load_config, load_engine
+from riptide.config.loader import load_config
+from riptide.engine.loader import load_engine
 
 
 def load_shell_integration(system_config: Config):
@@ -38,7 +39,7 @@ def load_shell_integration(system_config: Config):
         with open(path_to_cmd_file, 'w') as file:
             file.write("""#!%s
 import sys
-from riptide.cli.shell_integration import run_cmd
+from riptide_cli.shell_integration import run_cmd
 run_cmd("%s", sys.argv[1:])
 """ % (sys.executable, entry))
 

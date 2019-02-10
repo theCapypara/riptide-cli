@@ -3,8 +3,8 @@ import os
 import click
 from click import style, echo
 
-from riptide.cli.helpers import cli_section, TAB, RiptideCliError, async_command
-from riptide.cli.lifecycle import status_project, stop_project, start_project
+from riptide_cli.helpers import cli_section, TAB, RiptideCliError, async_command
+from riptide_cli.lifecycle import status_project, stop_project, start_project
 from riptide.db.driver import db_driver_for_service
 from riptide.db.environments import DbEnvironments
 

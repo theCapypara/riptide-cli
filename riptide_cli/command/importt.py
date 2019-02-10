@@ -5,8 +5,8 @@ import click
 from click import echo
 from distutils.dir_util import copy_tree
 
-from riptide.cli.command.db import importt_impl
-from riptide.cli.helpers import cli_section, async_command, RiptideCliError
+from riptide_cli.command.db import importt_impl
+from riptide_cli.helpers import cli_section, async_command, RiptideCliError
 from riptide.db.environments import DbEnvironments
 
 

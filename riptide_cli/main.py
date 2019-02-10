@@ -5,19 +5,18 @@ import click
 from click import echo
 
 from configcrunch import ReferencedDocumentNotFound
-from riptide.cli.click import ClickMainGroup
-from riptide.cli.command import base as base_commands
-from riptide.cli.command import db as db_commands
-from riptide.cli.command import importt as import_commands
-from riptide.cli.command import project as project_commands
-from riptide.cli.command.base import COMMAND_CREATE_CONFIG_USER
+from riptide_cli.click import ClickMainGroup
+from riptide_cli.command import base as base_commands
+from riptide_cli.command import db as db_commands
+from riptide_cli.command import importt as import_commands
+from riptide_cli.command import project as project_commands
+from riptide_cli.command.base import COMMAND_CREATE_CONFIG_USER
 
-from riptide.cli.helpers import RiptideCliError, warn, TAB
-from riptide.cli.shell_integration import load_shell_integration
-from riptide.config.files import get_project_meta_folder, RIPTIDE_PROJECT_SETUP_FLAG_FILENAME, \
-    get_project_setup_flag_path
-from riptide.config.loader import load_config, load_engine
-from riptide.config.loader import write_project
+from riptide_cli.helpers import RiptideCliError, warn, TAB
+from riptide_cli.shell_integration import load_shell_integration
+from riptide.config.files import get_project_setup_flag_path
+from riptide.config.loader import load_config, write_project
+from riptide.engine.loader import load_engine
 
 """
 todo: 
@@ -58,8 +57,8 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
         if not ctx.riptide_options['update']:
             args = sys.argv.copy()
             args.insert(1, '--update')
-            rerun_note = "\nMake sure your repositories are up to date, by re-running this command with --update:\n" + TAB + TAB + " ".join(args)
-        raise RiptideCliError("Failed to find a referenced ($ref) document." + rerun_note, ctx) from ex
+            rerun_note = "\n\nMake sure your repositories are up to date, by re-running this command with --update:\n" + TAB + TAB + " ".join(args)
+        raise RiptideCliError("Failed to load project because a referenced document could not be found." + rerun_note, ctx) from ex
     except Exception as ex:
         raise RiptideCliError('Error parsing the system or project configuration.', ctx) from ex
     else:
@@ -68,7 +67,10 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
             echo()
         else:
             # Write project name -> path mapping into projects.json file.
-            write_project(ctx.system_config["project"], rename, ctx)
+            try:
+                write_project(ctx.system_config["project"], rename)
+            except FileExistsError as err:
+                raise RiptideCliError(str(err), ctx) from err
 
             # Check if project setup command was run yet.
             ctx.project_is_set_up = os.path.exists(get_project_setup_flag_path(ctx.system_config["project"].folder()))

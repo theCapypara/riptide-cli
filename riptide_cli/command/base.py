@@ -4,8 +4,8 @@ import yaml
 from click import echo, style
 from shutil import copyfile
 
-from riptide.cli.helpers import warn, cli_section
-from riptide.cli.lifecycle import status_project
+from riptide_cli.helpers import warn, cli_section
+from riptide_cli.lifecycle import status_project
 from riptide.config.files import riptide_assets_dir, riptide_main_config_file, riptide_config_dir, RIPTIDE_PROJECT_CONFIG_NAME
 
 COMMAND_CREATE_CONFIG_USER = 'config:create:user'

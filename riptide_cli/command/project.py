@@ -1,9 +1,9 @@
 import click
 from click import echo, style
 
-from riptide.cli.helpers import cli_section, async_command, RiptideCliError, TAB
-from riptide.cli.lifecycle import start_project, stop_project
-from riptide.cli.setup_assistant import setup_assistant
+from riptide_cli.helpers import cli_section, async_command, RiptideCliError, TAB
+from riptide_cli.lifecycle import start_project, stop_project
+from riptide_cli.setup_assistant import setup_assistant
 from riptide.engine.abstract import ExecError
 
 

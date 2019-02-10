@@ -5,7 +5,7 @@ import traceback
 from click import echo, style
 from tqdm import tqdm
 
-from riptide.cli.helpers import RiptideCliError, TAB, get_is_verbose
+from riptide_cli.helpers import RiptideCliError, TAB, get_is_verbose
 from riptide.engine.status import status_for
 
 

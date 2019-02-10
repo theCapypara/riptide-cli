@@ -1,13 +1,5 @@
 Click==7.0
 colorama==0.4
 click-help-colors==0.5
-schema==0.6
-pyyaml==3.13
-configcrunch==0.1
-docker==3.5.1
-appdirs==1.4.3
-janus==0.4.0
-psutil==5.4.8
 tqdm==4.29.1
-pywinpty==0.5.5; sys_platform == 'win32'
-GitPython==2.1.11
+riptide_lib==0.1

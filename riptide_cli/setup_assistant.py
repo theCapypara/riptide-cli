@@ -2,9 +2,9 @@ from sys import stdin
 
 from click import style, echo, getchar
 
-from riptide.cli.command.db import importt_impl
-from riptide.cli.command.importt import files_impl
-from riptide.cli.helpers import RiptideCliError, TAB
+from riptide_cli.command.db import importt_impl
+from riptide_cli.command.importt import files_impl
+from riptide_cli.helpers import RiptideCliError, TAB
 from riptide.config.files import get_project_setup_flag_path
 from riptide.db.driver import db_driver_for_service
 from riptide.db.environments import DbEnvironments
