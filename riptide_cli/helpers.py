@@ -37,6 +37,12 @@ class RiptideCliError(ClickException):
                 echo()
                 echo(style('Use -v (before command!) to show stack traces.', fg='yellow'), file=file)
 
+    def __str__(self):
+        error_string = self.__class__.__name__ + ": " + self.message
+        if self.__cause__:
+            error_string += ": " + self.__cause__.__class__.__name__ + ": " + str(self.__cause__)
+        return error_string
+
 
 def warn(msg):
     echo(style('Warning: ', fg='yellow', bold=True) + style(msg, fg='yellow'))
