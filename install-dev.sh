@@ -19,8 +19,8 @@ git clone git@github.com:Parakoopa/riptide-engine-docker.git ../engine-docker
 cd ../engine-docker
 eval $SUDO_PREFIX pip install -r requirements.txt && $SUDO_PREFIX pip install -e .
 # Install db_mysql
-git clone git@github.com:Parakoopa/riptide-db-msql.git ../db-msql
-cd ../db-msql
+git clone git@github.com:Parakoopa/riptide-db-msql.git ../db-mysql
+cd ../db-mysql
 eval $SUDO_PREFIX pip install -r requirements.txt && $SUDO_PREFIX pip install -e .
 # Install Proxy
 git clone git@github.com:Parakoopa/riptide-proxy.git ../proxy

@@ -11,6 +11,6 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        riptide=riptide.cli.main:cli
+        riptide=riptide_cli.main:cli
     ''',
 )
