@@ -8,7 +8,7 @@ case $yn in
     * )     SUDO_PREFIX=""
 esac
 
-eval $SUDO_PREFIX pip uninstall riptide > /dev/null # old name
+eval $SUDO_PREFIX pip3 uninstall riptide > /dev/null # old name
 
 check_and_pull() {
     dir_name=$1
@@ -27,7 +27,7 @@ check_and_pull() {
         git clone git@github.com:Parakoopa/$git_name.git ../$dir_name
         cd ../$dir_name
     fi
-    eval $SUDO_PREFIX pip install -r requirements.txt && $SUDO_PREFIX pip install -e .
+    eval $SUDO_PREFIX pip3 install -r requirements.txt && $SUDO_PREFIX pip3 install -e .
 }
 
 # Install all other riptide components
@@ -42,4 +42,4 @@ echo "----"
 echo "INSTALLING riptide-cli"
 echo "----"
 cd $DIR
-eval $SUDO_PREFIX pip install -r requirements.txt && $SUDO_PREFIX pip install -e .
+eval $SUDO_PREFIX pip3 install -r requirements.txt && $SUDO_PREFIX pip3 install -e .

@@ -11,7 +11,6 @@ def load(ctx):
     """Adds project commands to the CLI, if project commands are available"""
     if "project" in ctx.system_config:
         ctx.command.add_command(start,    'start')
-        ctx.command.add_command(start_fg, 'start:fg')
         ctx.command.add_command(stop,     'stop')
         ctx.command.add_command(restart,  'restart')
         ctx.command.add_command(cmd,      'cmd')
@@ -34,24 +33,6 @@ async def start(ctx, services):
     if services is not None:
         services = services.split(",")
     await start_project(ctx, services)
-
-
-@cli_section("Service")
-@click.command()
-@click.pass_context
-@click.argument('service', required=False)
-@click.option('--services', '-s', required=False, help='Names of additional services to start, comma-separated (default: all)')
-@async_command
-async def start_fg(ctx, service, services):
-    """
-    Starts services and runs one in foreground.
-    Starts all services specified by --services (or all), except for <service> (main service by default).
-    <service> is instead started separately after the rest in foreground mode. Stdin/Stdout/Stderr are attached
-    to this service and not written to their log files, even if stdout/stderr logging is enabled for the service.
-    """
-    if not ctx.parent.project_is_set_up:
-        return please_set_up()
-    # todo
 
 
 @cli_section("Service")

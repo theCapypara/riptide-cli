@@ -32,10 +32,16 @@ class RiptideCliError(ClickException):
             echo(style(traceback.format_exc(), bg='red'), file=file)
         else:
             echo(style(self.message, bg='red', fg='white', bold=True), file=file)
-            if self.__context__ is not None:
-                echo(style('>> Error message: %s' % str(self.__context__), bg='red', fg='white'), file=file)
-                echo()
-                echo(style('Use -v (before command!) to show stack traces.', fg='yellow'), file=file)
+            current_err = self
+            previous_message = str(self)
+            while current_err.__context__ is not None:
+                current_err = current_err.__context__
+                # Filter duplicate exception messages. 'schema' used by configcrunch does that for example.
+                if previous_message != str(current_err):
+                    echo(style('>> Caused by: %s' % str(current_err), bg='red', fg='white'), file=file)
+                previous_message = str(current_err)
+            echo()
+            echo(style('Use -v (before command!) to show stack traces.', fg='yellow'), file=file)
 
     def __str__(self):
         error_string = self.__class__.__name__ + ": " + self.message

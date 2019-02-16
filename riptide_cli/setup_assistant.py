@@ -80,6 +80,7 @@ async def setup_assistant(ctx, force, skip):
         echo("The app %s does not specify a database or files to import. You are already done!" % project["app"]["name"])
         echo("You can now start the project with the start command.")
         echo("Make sure to read the manual if you have any questions.")
+        open(get_project_setup_flag_path(project.folder()), 'a').close()
         return
 
     # Import db

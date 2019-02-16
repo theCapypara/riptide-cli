@@ -156,10 +156,11 @@ def status_project(ctx, limit_services=None):
     project = None
     if system_config is None:
         echo(TAB + style('No system configuration found.', fg='yellow'))
-    if not ctx.parent.project_is_set_up:
-        echo(TAB + style('Project is not yet set up. Run the setup command.', fg='yellow'))
     elif "project" in system_config:
         project = system_config["project"]
+    if not ctx.parent.project_is_set_up:
+        echo(TAB + style('Project is not yet set up. Run the setup command.', fg='yellow'))
+        return
     if project is None:
         echo(TAB + style('No project found.', fg='yellow'))
     else:
