@@ -41,7 +41,7 @@ class RiptideCliError(ClickException):
                     echo(style('>> Caused by: %s' % str(current_err), bg='red', fg='white'), file=file)
                 previous_message = str(current_err)
             echo()
-            echo(style('Use -v (before command!) to show stack traces.', fg='yellow'), file=file)
+            echo(style('Use -v to show stack traces.', fg='yellow'), file=file)
 
     def __str__(self):
         error_string = self.__class__.__name__ + ": " + self.message

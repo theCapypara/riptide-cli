@@ -10,7 +10,7 @@ from riptide_cli.command import base as base_commands
 from riptide_cli.command import db as db_commands
 from riptide_cli.command import importt as import_commands
 from riptide_cli.command import project as project_commands
-from riptide_cli.command.base import COMMAND_CREATE_CONFIG_USER
+from riptide_cli.command.base import COMMAND_EDIT_CONFIG_USER
 
 from riptide_cli.helpers import RiptideCliError, warn, TAB
 from riptide_cli.shell_integration import load_shell_integration
@@ -48,8 +48,8 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
     except FileNotFoundError:
         # Don't show this if the user may have called the command. Since we don't know the invoked command at this
         # point, we just check if the name of the command is anywhere in the protected_args
-        if COMMAND_CREATE_CONFIG_USER not in ctx.protected_args and not ctx.resilient_parsing:
-            warn("You don't have a configuration file for Riptide yet. Use %s to create one." % COMMAND_CREATE_CONFIG_USER)
+        if COMMAND_EDIT_CONFIG_USER not in ctx.protected_args and not ctx.resilient_parsing:
+            warn("You don't have a configuration file for Riptide yet. Use %s to create one." % COMMAND_EDIT_CONFIG_USER)
             echo()
     except ReferencedDocumentNotFound as ex:
         rerun_note = ""
@@ -62,9 +62,10 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
     except Exception as ex:
         raise RiptideCliError('Error parsing the system or project configuration.', ctx) from ex
     else:
-        if "project" not in ctx.system_config and not ctx.resilient_parsing:
-            warn("No project found. Are you running Riptide inside a Riptide project?")
-            echo()
+        if "project" not in ctx.system_config:
+            if not ctx.resilient_parsing:  # Don't show for Auto-complete parsing
+                warn("No project found. Are you running Riptide inside a Riptide project?")
+                echo()
         else:
             # Write project name -> path mapping into projects.json file.
             try:

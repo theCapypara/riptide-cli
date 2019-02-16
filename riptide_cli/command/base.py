@@ -8,14 +8,14 @@ from riptide_cli.helpers import warn, cli_section
 from riptide_cli.lifecycle import status_project
 from riptide.config.files import riptide_assets_dir, riptide_main_config_file, riptide_config_dir, RIPTIDE_PROJECT_CONFIG_NAME
 
-COMMAND_CREATE_CONFIG_USER = 'config:create:user'
+COMMAND_EDIT_CONFIG_USER = 'config-edit-user'
 
 
 def load(ctx):
     """Adds all base commands to the CLI"""
-    ctx.command.add_command(config_dump,            'config:dump')
-    ctx.command.add_command(config_create_user,     COMMAND_CREATE_CONFIG_USER)
-    ctx.command.add_command(config_create_project,  'config:create:project')
+    ctx.command.add_command(config_dump,            'config-dump')
+    ctx.command.add_command(config_create_user,      COMMAND_EDIT_CONFIG_USER)
+    ctx.command.add_command(config_create_project,  'config-edit-project')
     ctx.command.add_command(status,                 'status')
 
 

@@ -12,14 +12,14 @@ from riptide.db.environments import DbEnvironments
 def load(ctx):
     """Adds all database commands to the CLI, if database management is available"""
     if "project" in ctx.system_config and DbEnvironments.has_db(ctx.system_config["project"]):
-        ctx.command.add_command(status,  'db:status')
-        ctx.command.add_command(lst,     'db:list')
-        ctx.command.add_command(switch,  'db:switch')
-        ctx.command.add_command(new,     'db:new')
-        ctx.command.add_command(drop,    'db:drop')
-        ctx.command.add_command(copy,    'db:copy')
-        ctx.command.add_command(importt, 'db:import')
-        ctx.command.add_command(export,  'db:export')
+        ctx.command.add_command(status,  'db-status')
+        ctx.command.add_command(lst,     'db-list')
+        ctx.command.add_command(switch,  'db-switch')
+        ctx.command.add_command(new,     'db-new')
+        ctx.command.add_command(drop,    'db-drop')
+        ctx.command.add_command(copy,    'db-copy')
+        ctx.command.add_command(importt, 'db-import')
+        ctx.command.add_command(export,  'db-export')
 
 
 @cli_section("Database")
