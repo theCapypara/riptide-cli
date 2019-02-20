@@ -1,6 +1,8 @@
 import click
-from click import echo, style
+from click import echo, style, clear
+from typing import Union
 
+from riptide.engine.results import ResultQueue
 from riptide_cli.helpers import cli_section, async_command, RiptideCliError, TAB
 from riptide_cli.lifecycle import start_project, stop_project
 from riptide_cli.setup_assistant import setup_assistant
@@ -21,11 +23,27 @@ def load(ctx):
             ctx.command.add_command(notes,    'notes')
 
 
+def interrupt_handler(ctx, ex: Union[KeyboardInterrupt, SystemExit]):
+    """Handle interrupts raised while running asynchronous AsyncIO code, fun stuff!"""
+    # In case there are any open progress bars, close them:
+    if ctx.progress_bars:
+        for progress_bar in reversed(ctx.progress_bars.values()):
+            progress_bar.close()
+            echo()
+    echo(style('Riptide process was interrupted. '
+               'Services might be in an invalid state. You may want to run riptide stop.', bg='red', fg='white'))
+    echo("Finishing up... Stand by!")
+    # Poison all ResultQueues to halt all start/stop threads after the next step.
+    ResultQueue.poison()
+    echo("Done!")
+    exit(1)
+
+
 @cli_section("Service")
 @click.command()
 @click.pass_context
 @click.option('--services', '-s', required=False, help='Names of services to start, comma-separated (default: all)')
-@async_command
+@async_command(interrupt_handler=interrupt_handler)
 async def start(ctx, services):
     """ Starts services. """
     if not ctx.parent.project_is_set_up:
@@ -39,7 +57,7 @@ async def start(ctx, services):
 @click.command()
 @click.pass_context
 @click.option('--services', '-s', required=False, help='Names of services to stop, comma-separated (default: all)')
-@async_command
+@async_command(interrupt_handler=interrupt_handler)
 async def stop(ctx, services):
     """ Stops services. """
     if not ctx.parent.project_is_set_up:

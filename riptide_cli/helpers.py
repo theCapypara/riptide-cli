@@ -67,18 +67,23 @@ def cli_section(section):
     return decorator
 
 
-def async_command(f):
+def async_command(interrupt_handler=lambda _, __: True):
     """
     Makes a Click command be wrapped inside the execution of an asyncio loop
     SOURCE:  https://github.com/pallets/click/issues/85
     """
-    f = asyncio.coroutine(f)
+    def decorator(f):
+        f = asyncio.coroutine(f)
 
-    def wrapper(*args, **kwargs):
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(f(*args, **kwargs))
+        def wrapper(ctx, *args, **kwargs):
+            loop = asyncio.get_event_loop()
+            try:
+                return loop.run_until_complete(f(ctx, *args, **kwargs))
+            except (KeyboardInterrupt, SystemExit) as ex:
+                interrupt_handler(ctx, ex)
 
-    return update_wrapper(wrapper, f)
+        return update_wrapper(wrapper, f)
+    return decorator
 
 
 TAB = '    '

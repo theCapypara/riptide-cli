@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import os
 from typing import Union, List
 
@@ -5,6 +7,7 @@ import traceback
 from click import echo, style
 from tqdm import tqdm
 
+from riptide.engine.results import ResultQueue
 from riptide_cli.helpers import RiptideCliError, TAB, get_is_verbose
 from riptide.engine.status import status_for
 
@@ -27,7 +30,7 @@ def text_width_error():
 
 def _build_progress_bars(services):
     """Builds and prepares the progressbar objects for each service"""
-    progress_bars = {}
+    progress_bars = OrderedDict()
 
     longest_service_name_len = len(max(services, key=len))
 
@@ -92,16 +95,16 @@ async def start_project(ctx, services: Union[List[str], None], show_status=True)
     echo("Starting services...")
     echo()
 
-    progress_bars = _build_progress_bars(services)
+    ctx.progress_bars = _build_progress_bars(services)
     errors = []
 
     try:
         async for service_name, status, finished in engine.start_project(project, services):
-            _handle_progress_bar(service_name, status, finished, progress_bars, errors)
+            _handle_progress_bar(service_name, status, finished, ctx.progress_bars, errors)
     except Exception as err:
         raise RiptideCliError("Error starting the services", ctx) from err
 
-    for bar in progress_bars.values():
+    for bar in reversed(ctx.progress_bars.values()):
         bar.close()
         echo()
 
@@ -125,16 +128,16 @@ async def stop_project(ctx, services: Union[List[str], None], show_status=True):
     echo("Stopping services...")
     echo()
 
-    progress_bars = _build_progress_bars(services)
+    ctx.progress_bars = _build_progress_bars(services)
     errors = []
 
     try:
         async for service_name, status, finished in engine.stop_project(project, services):
-            _handle_progress_bar(service_name, status, finished, progress_bars, errors)
+            _handle_progress_bar(service_name, status, finished, ctx.progress_bars, errors)
     except Exception as err:
         raise RiptideCliError("Error stopping the services", ctx) from err
 
-    for bar in reversed(list(progress_bars.values())):
+    for bar in reversed(ctx.progress_bars.values()):
         bar.close()
         echo()
 
