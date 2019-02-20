@@ -71,7 +71,7 @@ def _handle_progress_bar(service_name, status, finished, progress_bars, errors):
         progress_bars[service_name].refresh()
 
 
-def _display_errors(errors):
+def display_errors(errors):
     """Displays errors during start/stop (if any)."""
     if len(errors) > 0:
         echo(style("There were errors while starting some of the services: ", fg='red', bold=True))
@@ -96,11 +96,11 @@ async def start_project(ctx, services: Union[List[str], None], show_status=True)
     echo()
 
     ctx.progress_bars = _build_progress_bars(services)
-    errors = []
+    ctx.start_stop_errors = []
 
     try:
         async for service_name, status, finished in engine.start_project(project, services):
-            _handle_progress_bar(service_name, status, finished, ctx.progress_bars, errors)
+            _handle_progress_bar(service_name, status, finished, ctx.progress_bars, ctx.start_stop_errors)
     except Exception as err:
         raise RiptideCliError("Error starting the services", ctx) from err
 
@@ -108,7 +108,7 @@ async def start_project(ctx, services: Union[List[str], None], show_status=True)
         bar.close()
         echo()
 
-    _display_errors(errors)
+    display_errors(ctx.start_stop_errors)
 
     if show_status:
         status_project(ctx)
@@ -129,11 +129,11 @@ async def stop_project(ctx, services: Union[List[str], None], show_status=True):
     echo()
 
     ctx.progress_bars = _build_progress_bars(services)
-    errors = []
+    ctx.start_stop_errors = []
 
     try:
         async for service_name, status, finished in engine.stop_project(project, services):
-            _handle_progress_bar(service_name, status, finished, ctx.progress_bars, errors)
+            _handle_progress_bar(service_name, status, finished, ctx.progress_bars, ctx.start_stop_errors)
     except Exception as err:
         raise RiptideCliError("Error stopping the services", ctx) from err
 
@@ -141,7 +141,7 @@ async def stop_project(ctx, services: Union[List[str], None], show_status=True):
         bar.close()
         echo()
 
-    _display_errors(errors)
+    display_errors(ctx.start_stop_errors)
 
     if show_status:
         status_project(ctx)

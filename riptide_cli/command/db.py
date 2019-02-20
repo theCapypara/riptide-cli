@@ -58,7 +58,7 @@ def lst(ctx):
             echo(TAB + "- " + env)
 
     echo()
-    echo("Use db:switch to switch environments.")
+    echo("Use db-switch to switch environments.")
 
 
 @cli_section("Database")

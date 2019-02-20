@@ -4,7 +4,7 @@ from typing import Union
 
 from riptide.engine.results import ResultQueue
 from riptide_cli.helpers import cli_section, async_command, RiptideCliError, TAB
-from riptide_cli.lifecycle import start_project, stop_project
+from riptide_cli.lifecycle import start_project, stop_project, display_errors
 from riptide_cli.setup_assistant import setup_assistant
 from riptide.engine.abstract import ExecError
 
@@ -26,10 +26,12 @@ def load(ctx):
 def interrupt_handler(ctx, ex: Union[KeyboardInterrupt, SystemExit]):
     """Handle interrupts raised while running asynchronous AsyncIO code, fun stuff!"""
     # In case there are any open progress bars, close them:
-    if ctx.progress_bars:
+    if hasattr(ctx, "progress_bars"):
         for progress_bar in reversed(ctx.progress_bars.values()):
             progress_bar.close()
             echo()
+    if hasattr(ctx, "start_stop_errors"):
+        display_errors(ctx.start_stop_errors)
     echo(style('Riptide process was interrupted. '
                'Services might be in an invalid state. You may want to run riptide stop.', bg='red', fg='white'))
     echo("Finishing up... Stand by!")
