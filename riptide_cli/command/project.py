@@ -1,3 +1,5 @@
+import os
+
 import click
 from click import echo, style, clear
 from typing import Union
@@ -173,7 +175,8 @@ def exec_cmd(ctx, service):
         service = project["app"].get_service_by_role('main')["$name"]
 
     try:
-        engine.exec(project, service)
+        cols, lines = os.get_terminal_size()
+        engine.exec(project, service, cols=cols, lines=lines)
     except ExecError as err:
         raise RiptideCliError(str(err), ctx) from err
 
