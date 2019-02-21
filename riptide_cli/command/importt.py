@@ -22,7 +22,7 @@ def load(ctx):
 @click.command()
 @click.argument('file')
 @click.pass_context
-@async_command
+@async_command()
 async def db(ctx, file):
     """ Alias for db:import """
     return await importt_impl(ctx, file)

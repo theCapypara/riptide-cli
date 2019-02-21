@@ -65,7 +65,7 @@ def lst(ctx):
 @click.command()
 @click.pass_context
 @click.argument('name')
-@async_command
+@async_command()
 async def switch(ctx, name):
     """ Switches the active database environment """
     await switch_impl(ctx, name)
@@ -103,7 +103,7 @@ async def switch_impl(ctx, name):
 @click.pass_context
 @click.option('-s', '--stay', is_flag=True, help="If set, don't switch to the newly created environment.")
 @click.argument('name')
-@async_command
+@async_command()
 async def new(ctx, stay, name):
     """ Create a new (blank) database environment """
     project = ctx.parent.system_config["project"]
@@ -156,7 +156,7 @@ def drop(ctx, name):
 @click.option('-s', '--stay', is_flag=True, help="If set, don't switch to the newly created environment.")
 @click.argument('name_to_copy')
 @click.argument('name_new')
-@async_command
+@async_command()
 async def copy(ctx, stay, name_to_copy, name_new):
     """ Copy an existing database environment """
     project = ctx.parent.system_config["project"]
@@ -186,7 +186,7 @@ async def copy(ctx, stay, name_to_copy, name_new):
 @click.command()
 @click.argument('file')
 @click.pass_context
-@async_command
+@async_command()
 async def importt(ctx, file):
     """
     Import a database dump into the active environment.
@@ -232,7 +232,7 @@ async def importt_impl(ctx, file):
 @click.command()
 @click.argument('file')
 @click.pass_context
-@async_command
+@async_command()
 async def export(ctx, file):
     """
     Export database dump from the current environment.

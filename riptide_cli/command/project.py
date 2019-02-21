@@ -73,7 +73,7 @@ async def stop(ctx, services):
 @click.command()
 @click.pass_context
 @click.option('--services', '-s', required=False, help='Names of services to restart, comma-separated (default: all)')
-@async_command
+@async_command(interrupt_handler=interrupt_handler)
 async def restart(ctx, services):
     """ Stops and then starts services. """
     if not ctx.parent.project_is_set_up:
@@ -183,7 +183,7 @@ def exec_cmd(ctx, service):
 @click.pass_context
 @click.option('-f', '--force', is_flag=True, help='Force setup, even if it was already run.')
 @click.option('-s', '--skip', is_flag=True, help="Mark project as set up, don't ask any interactive questions")
-@async_command
+@async_command()
 async def setup(ctx, force, skip):
     """
     Run the initial interactive project setup.
