@@ -155,8 +155,9 @@ def cmd(ctx, command, arguments, list):
 @cli_section("CLI")
 @click.command()
 @click.pass_context
+@click.option('--root', is_flag=True, default=False, help='Run the shell as the root user instead')
 @click.argument('service', required=False)
-def exec_cmd(ctx, service):
+def exec_cmd(ctx, service, root):
     """
     Opens a shell into a service container.
     The shell is run interactively (Stdout/Stderr/Stdin are attached).
@@ -176,7 +177,7 @@ def exec_cmd(ctx, service):
 
     try:
         cols, lines = os.get_terminal_size()
-        engine.exec(project, service, cols=cols, lines=lines)
+        engine.exec(project, service, cols=cols, lines=lines, root=root)
     except ExecError as err:
         raise RiptideCliError(str(err), ctx) from err
 
