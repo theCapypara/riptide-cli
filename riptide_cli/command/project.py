@@ -94,7 +94,7 @@ def notes(ctx):
     notes = ctx.parent.system_config["project"]["app"]["notices"]
     if 'installation' in notes:
         echo(style("Installation notice:", bold=True))
-        echo(notes['installation_from_zero'])
+        echo(notes['installation'])
 
     echo()
     if 'usage' in notes:
@@ -103,12 +103,13 @@ def notes(ctx):
 
 
 @cli_section("CLI")
-@click.command()
+@click.command(context_settings={
+    'ignore_unknown_options': True  # Make all unknown options redirect to arguments
+})
 @click.pass_context
 @click.argument('command', required=False)
-@click.argument('arguments', required=False, nargs=-1)
-@click.option('--list', '-l', is_flag=True, help="List all commands")
-def cmd(ctx, command, arguments, list):
+@click.argument('arguments', required=False, nargs=-1, type=click.UNPROCESSED)
+def cmd(ctx, command, arguments):
     """
     Executes a project command.
     Project commands are specified in the project configuration.
@@ -116,13 +117,15 @@ def cmd(ctx, command, arguments, list):
     If you are currently in a subdirectory of 'src' (see project configuration), then the command
     will be executed inside of this directory. Otherwise the command will be executed in the root
     of the 'src' directory. All commands are executed as the current user + group.
+
+    When command is not specified, all commands will be listed.
     """
     if not ctx.parent.project_is_set_up:
         return please_set_up()
     project = ctx.parent.system_config["project"]
     engine = ctx.parent.engine
 
-    if list:
+    if command is None:
         click.echo(click.style("Commands:", bold=True))
         if "commands" not in project["app"] or len(project["app"]["commands"]) < 1:
             click.echo(TAB + "No commands specified.")
@@ -135,9 +138,6 @@ def cmd(ctx, command, arguments, list):
                 # normal cmd
                 click.echo(TAB + "- " + click.style(name, bold=True))
         return
-
-    if command is None:
-        raise RiptideCliError("No command specified (--list for list).", ctx)
 
     if "commands" not in project["app"] or command not in project["app"]["commands"]:
         raise RiptideCliError("Command not found.", ctx)

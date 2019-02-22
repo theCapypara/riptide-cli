@@ -1,3 +1,4 @@
+import os
 from sys import stdin
 
 from click import style, echo, getchar
@@ -22,36 +23,40 @@ async def setup_assistant(ctx, force, skip):
                               ctx)
 
     if skip:
-        open(get_project_setup_flag_path(project.folder()), 'a').close()
         echo("Project was marked as set up.")
+        finish(ctx)
         return
 
-    echo(style("Thank you for using Riptide!", fg='cyan'))
+    echo(style("Thank you for using Riptide!", fg='cyan', bold=True))
     echo("This command will guide you through the initial setup for %s." % project["name"])
+    echo(style("Please follow it very carefully, it won't take long!", bold=True))
+    echo("Press any key to continue...")
+    getchar()
+    echo()
+    echo(style("> BEGIN SETUP", bg='cyan', fg='white'))
     if "notices" in project["app"] and "usage" in project["app"]["notices"]:
         echo()
         echo(style("Usage notes for running %s" % project["app"]["name"], bold=True) + " with Riptide:")
-        echo(TAB + project["app"]["notices"]["usage"])
+        echo(TAB + TAB.join(project["app"]["notices"]["usage"].splitlines(True)))
     echo()
 
     # Q1
     echo("Do you wish to run this interactive setup? [Y/n] ", nl=False)
-    if getchar().lower() == 'n':
+    if getchar(True).lower() == 'n':
         echo()
         echo()
-        echo("Okay! You can now start the project with the start command.\n"
-             "Make sure to read the manual if you have any questions.\n"
-             "To re-run this setup, pass the --force option.")
-        open(get_project_setup_flag_path(project.folder()), 'a').close()
+        echo(style("> END SETUP", bg='cyan', fg='white'))
+        echo("Okay! To re-run this setup, pass the --force option.")
+        finish(ctx)
         return
     echo()
     echo()
     echo(style("> INTERACTIVE SETUP", bg='cyan', fg='white'))
 
     # Q2: New or existing?
-    echo("Are you working on a new project that needs to be installed (n) "
-         "or do you want to import existing data (i)? [n/I] ", nl=False)
-    if getchar().lower() == 'n':
+    echo("Are you working on a " + style("n", bold=True, fg="cyan") + "ew project that needs to be installed "
+         "or do you want to " + style("I", bold=True, fg="cyan") + "mport existing data? [n/I] ", nl=False)
+    if getchar(True).lower() == 'n':
         # New project
         if "notices" in project["app"] and "installation" in project["app"]["notices"]:
             echo()
@@ -61,10 +66,8 @@ async def setup_assistant(ctx, force, skip):
             echo("Please read these notes on how to run a first-time-installation for %s." % project["app"]["name"])
             echo()
             echo(style("Installation instructions:", bold=True))
-            echo(TAB + project["app"]["notices"]["installation"])
-            echo()
-            echo("Setup assistant is done, you can now run commands like start.")
-            open(get_project_setup_flag_path(project.folder()), 'a').close()
+            echo(TAB + TAB.join(project["app"]["notices"]["installation"].splitlines(True)))
+            finish(ctx)
             return
 
     # Existing project
@@ -78,9 +81,7 @@ async def setup_assistant(ctx, force, skip):
     if not db_can_be_imported and not files_can_be_imported:
         # Nothing to import
         echo("The app %s does not specify a database or files to import. You are already done!" % project["app"]["name"])
-        echo("You can now start the project with the start command.")
-        echo("Make sure to read the manual if you have any questions.")
-        open(get_project_setup_flag_path(project.folder()), 'a').close()
+        finish(ctx)
         return
 
     # Import db
@@ -89,7 +90,7 @@ async def setup_assistant(ctx, force, skip):
         db_driver = db_driver_for_service.get(dbenv.db_service)
         echo(TAB + style("> DATABASE IMPORT", bg='cyan', fg='white'))
         echo("Do you want to import a database (format %s)? [Y/n] " % dbenv.db_service['driver']['name'], nl=False)
-        if getchar().lower() != 'n':
+        if getchar(True).lower() != 'n':
             # Import db
             echo()
             exit_cmd = False
@@ -105,7 +106,7 @@ async def setup_assistant(ctx, force, skip):
                     echo("Error: " + style(str(err), fg='red'))
                     echo(CMD_SEP)
                     echo("Do you want to try again? [yN] ",nl=False)
-                    if getchar().lower() != 'y':
+                    if getchar(True).lower() != 'y':
                         exit_cmd = True
                     echo()
 
@@ -118,7 +119,7 @@ async def setup_assistant(ctx, force, skip):
             for key, entry in project['app']['import'].items():
                 echo(TAB + TAB + style("> %s IMPORT" % key, bg='cyan', fg='white'))
                 echo("Do you wish to import %s to <project>/%s? [Y/n] " % (entry['name'], entry['target']), nl=False)
-                if getchar().lower() != 'n':
+                if getchar(True).lower() != 'n':
                     # Import files
                     echo()
                     exit_cmd = False
@@ -134,14 +135,37 @@ async def setup_assistant(ctx, force, skip):
                             echo("Error: " + style(str(err), fg='red'))
                             echo(CMD_SEP)
                             echo("Do you want to try again? [yN] ",nl=False)
-                            if getchar().lower() != 'y':
+                            if getchar(True).lower() != 'y':
                                 exit_cmd = True
                             echo()
                 else:
                     echo()
         echo()
         echo(style("> IMPORT DONE!", bg='cyan', fg='white', bold=True))
-        echo("All files were imported. You are now ready to use Riptide!")
-        echo("You can now start the project with the start command.")
-        echo("Make sure to read the manual if you have any questions.")
-        open(get_project_setup_flag_path(project.folder()), 'a').close()
+        echo("All files were imported.")
+        finish(ctx)
+
+
+def finish(ctx):
+    echo()
+    echo(style("DONE!", bold=True))
+    echo()
+    echo("You can now start the project with start, "
+         "if the usage instructions at the beginning don't require you to do anything else.")
+    echo("If you need to read those again run " + style("riptide notes", bold=True))
+    echo()
+    project = ctx.parent.system_config["project"]
+    if "commands" in project["app"]:
+        cmd = list(project["app"]["commands"].keys())[0]
+        some_commands_in_project = ", ".join(list(project["app"]["commands"].keys())[:3])
+        if 'RIPTIDE_SHELL_LOADED' not in os.environ:
+            echo("It seems that the Riptide shell integration is not enabled yet.")
+            echo("It is available for Bash and Zsh and allows you to run custom commands such as %s more easily."
+                 % some_commands_in_project)
+            echo("If you want to set it up, have a look at the manual.")
+        else:
+            echo("If you want to use commands like %s leave and re-enter the project directory. " % some_commands_in_project)
+
+        echo("You don't need to use 'riptide cmd' then: '%s cmd %s arg1 arg2' -> '%s arg1 arg2'"
+             % (style("riptide", bold=True), cmd, style(cmd, bold=True)))
+    open(get_project_setup_flag_path(project.folder()), 'a').close()

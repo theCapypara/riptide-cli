@@ -1,6 +1,7 @@
 import os
 
 import click
+from asyncio import sleep
 from click import style, echo
 
 from riptide_cli.helpers import cli_section, TAB, RiptideCliError, async_command
@@ -213,6 +214,10 @@ async def importt_impl(ctx, file):
     was_running = engine.status(project, ctx.parent.system_config)[db_name]
     if not was_running:
         await start_project(ctx, [db_name], show_status=False)
+        # Wait a few seconds, just to be sure, some databases need a little while
+        # todo make this more dynamic
+        echo("Waiting for database...")
+        await sleep(10)
 
     # 2. Import
     echo("Importing into database environment %s... this may take a while..." % env_name)
