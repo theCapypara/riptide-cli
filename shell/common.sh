@@ -17,19 +17,28 @@ riptide_cwdir_hook() {
     done
     if [ ! -z "$project_path" ]; then
         # WE ARE IN PROJECT
-        if [ -z "$RIPTIDE__SH_BIN_PATH" ]; then
-            RIPTIDE__SH_BIN_PATH="$project_path/_riptide/bin"
+        new_sh_path="$project_path/_riptide/bin"
+        if [ "$RIPTIDE__SH_BIN_PATH" != "$new_sh_path" ]; then
+            if [ ! -z "$RIPTIDE__SH_BIN_PATH" ]; then
+                # The variable already existed somehow, nested projects?
+                riptide_cwdir_hook__remove
+            fi
+            RIPTIDE__SH_BIN_PATH=$new_sh_path
             # Add to path
             export PATH="$RIPTIDE__SH_BIN_PATH:$PATH"
         fi
-        RIPTIDE_PROJECT_NAME=$(cat "$project_path/_riptide/name" 2> /dev/null)
+        export RIPTIDE_PROJECT_NAME=$(cat "$project_path/_riptide/name" 2> /dev/null)
     else
         # WE ARE NOT IN PROJECT
         if [ ! -z "$RIPTIDE__SH_BIN_PATH" ]; then
-            # Remove riptide project bin path from path. Source: https://stackoverflow.com/a/370192
-            export PATH=$(echo ${PATH} | awk -v RS=: -v ORS=: "/$(echo $RIPTIDE__SH_BIN_PATH | sed 's/\//\\\//g')/ {next} {print}")
-            RIPTIDE__SH_BIN_PATH=""
+            riptide_cwdir_hook__remove
         fi
-        RIPTIDE_PROJECT_NAME=""
+        export RIPTIDE_PROJECT_NAME=""
     fi
+}
+
+riptide_cwdir_hook__remove() {
+    # Remove riptide project bin path from path. Source: https://stackoverflow.com/a/370192
+    export PATH=$(echo ${PATH} | awk -v RS=: -v ORS=: "/$(echo $RIPTIDE__SH_BIN_PATH | sed 's/\//\\\//g')/ {next} {print}")
+    RIPTIDE__SH_BIN_PATH=""
 }
