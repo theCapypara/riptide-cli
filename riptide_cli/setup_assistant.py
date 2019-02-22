@@ -30,7 +30,7 @@ async def setup_assistant(ctx, force, skip):
     echo(style("Thank you for using Riptide!", fg='cyan', bold=True))
     echo("This command will guide you through the initial setup for %s." % project["name"])
     echo(style("Please follow it very carefully, it won't take long!", bold=True))
-    echo("Press any key to continue...")
+    echo(style("> Press any key to continue...", fg='magenta'))
     getchar()
     echo()
     echo(style("> BEGIN SETUP", bg='cyan', fg='white'))
@@ -41,7 +41,7 @@ async def setup_assistant(ctx, force, skip):
     echo()
 
     # Q1
-    echo("Do you wish to run this interactive setup? [Y/n] ", nl=False)
+    echo(style("> Do you wish to run this interactive setup? [Y/n] ", fg='magenta'), nl=False)
     if getchar(True).lower() == 'n':
         echo()
         echo()
@@ -54,8 +54,11 @@ async def setup_assistant(ctx, force, skip):
     echo(style("> INTERACTIVE SETUP", bg='cyan', fg='white'))
 
     # Q2: New or existing?
-    echo("Are you working on a " + style("n", bold=True, fg="cyan") + "ew project that needs to be installed "
-         "or do you want to " + style("I", bold=True, fg="cyan") + "mport existing data? [n/I] ", nl=False)
+    echo(style("> Are you working on a ", fg='magenta') +
+         style("n", bold=True, fg="cyan") +
+         style("ew project that needs to be installed or do you want to ", fg='magenta') +
+         style("I", bold=True, fg="cyan") +
+         style("mport existing data? [n/I] ", fg='magenta'), nl=False)
     if getchar(True).lower() == 'n':
         # New project
         if "notices" in project["app"] and "installation" in project["app"]["notices"]:
@@ -89,7 +92,8 @@ async def setup_assistant(ctx, force, skip):
         dbenv = DbEnvironments(project, engine)
         db_driver = db_driver_for_service.get(dbenv.db_service)
         echo(TAB + style("> DATABASE IMPORT", bg='cyan', fg='white'))
-        echo("Do you want to import a database (format %s)? [Y/n] " % dbenv.db_service['driver']['name'], nl=False)
+        echo(style("> Do you want to import a database (format %s)? [Y/n] " % dbenv.db_service['driver']['name'],
+                   fg='magenta'), nl=False)
         if getchar(True).lower() != 'n':
             # Import db
             echo()
@@ -105,7 +109,7 @@ async def setup_assistant(ctx, force, skip):
                 except RiptideCliError as err:
                     echo("Error: " + style(str(err), fg='red'))
                     echo(CMD_SEP)
-                    echo("Do you want to try again? [yN] ",nl=False)
+                    echo(style("> Do you want to try again? [y/N] ", fg='magenta'), nl=False)
                     if getchar(True).lower() != 'y':
                         exit_cmd = True
                     echo()
@@ -118,7 +122,8 @@ async def setup_assistant(ctx, force, skip):
             echo(TAB + style("> FILE IMPORT", bg='cyan', fg='white'))
             for key, entry in project['app']['import'].items():
                 echo(TAB + TAB + style("> %s IMPORT" % key, bg='cyan', fg='white'))
-                echo("Do you wish to import %s to <project>/%s? [Y/n] " % (entry['name'], entry['target']), nl=False)
+                echo(style("> Do you wish to import %s to <project>/%s? [Y/n] " % (entry['name'], entry['target'])
+                           , fg='magenta'), nl=False)
                 if getchar(True).lower() != 'n':
                     # Import files
                     echo()
@@ -134,7 +139,7 @@ async def setup_assistant(ctx, force, skip):
                         except RiptideCliError as err:
                             echo("Error: " + style(str(err), fg='red'))
                             echo(CMD_SEP)
-                            echo("Do you want to try again? [yN] ",nl=False)
+                            echo(style("> Do you want to try again? [y/N] ", fg='magenta'), nl=False)
                             if getchar(True).lower() != 'y':
                                 exit_cmd = True
                             echo()
