@@ -118,7 +118,7 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
 def cli(*args, **kwargs):
     """
     Define development environments for web applications.
-    See full documentation at: https://... todo
+    See full documentation at: https://riptide-docs.readthedocs.io/en/latest/
     """
     # Nothing needs to be done, everything is in the group_callback
     pass

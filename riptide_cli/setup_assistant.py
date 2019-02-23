@@ -118,37 +118,37 @@ async def setup_assistant(ctx, force, skip):
             echo()
             echo("Skipping database import. If you change your mind, run db:import.")
 
-        if files_can_be_imported:
-            echo(TAB + style("> FILE IMPORT", bg='cyan', fg='white'))
-            for key, entry in project['app']['import'].items():
-                echo(TAB + TAB + style("> %s IMPORT" % key, bg='cyan', fg='white'))
-                echo(style("> Do you wish to import %s to <project>/%s? [Y/n] " % (entry['name'], entry['target'])
-                           , fg='magenta'), nl=False)
-                if getchar(True).lower() != 'n':
-                    # Import files
-                    echo()
-                    exit_cmd = False
-                    while not exit_cmd:
-                        echo("Enter path of files or directory to copy: ", nl=False)
-                        path = stdin.readline().rstrip('\r\n')
-                        try:
-                            echo(CMD_SEP)
-                            files_impl(ctx, key, path)
+    if files_can_be_imported:
+        echo(TAB + style("> FILE IMPORT", bg='cyan', fg='white'))
+        for key, entry in project['app']['import'].items():
+            echo(TAB + TAB + style("> %s IMPORT" % key, bg='cyan', fg='white'))
+            echo(style("> Do you wish to import %s to <project>/%s? [Y/n] " % (entry['name'], entry['target'])
+                       , fg='magenta'), nl=False)
+            if getchar(True).lower() != 'n':
+                # Import files
+                echo()
+                exit_cmd = False
+                while not exit_cmd:
+                    echo("Enter path of files or directory to copy: ", nl=False)
+                    path = stdin.readline().rstrip('\r\n')
+                    try:
+                        echo(CMD_SEP)
+                        files_impl(ctx, key, path)
+                        exit_cmd = True
+                        echo(CMD_SEP)
+                    except RiptideCliError as err:
+                        echo("Error: " + style(str(err), fg='red'))
+                        echo(CMD_SEP)
+                        echo(style("> Do you want to try again? [y/N] ", fg='magenta'), nl=False)
+                        if getchar(True).lower() != 'y':
                             exit_cmd = True
-                            echo(CMD_SEP)
-                        except RiptideCliError as err:
-                            echo("Error: " + style(str(err), fg='red'))
-                            echo(CMD_SEP)
-                            echo(style("> Do you want to try again? [y/N] ", fg='magenta'), nl=False)
-                            if getchar(True).lower() != 'y':
-                                exit_cmd = True
-                            echo()
-                else:
-                    echo()
-        echo()
-        echo(style("> IMPORT DONE!", bg='cyan', fg='white', bold=True))
-        echo("All files were imported.")
-        finish(ctx)
+                        echo()
+            else:
+                echo()
+    echo()
+    echo(style("> IMPORT DONE!", bg='cyan', fg='white', bold=True))
+    echo("All files were imported.")
+    finish(ctx)
 
 
 def finish(ctx):

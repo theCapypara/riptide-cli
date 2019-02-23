@@ -59,7 +59,7 @@ def config_create_user(force, edit):
         echo('Created config file at ' + style(config_path, bold=True))
 
     if edit is None:
-        edit = click.confirm('Do you want to edit the config file?')
+        edit = click.confirm('Do you want to edit the config file?', default=True)
     if edit:
         echo('Launching editor to edit the config file...')
         click.edit(filename=config_path)
@@ -87,7 +87,7 @@ def config_create_project(force, edit):
         echo('Created project file at ' + style(config_path, bold=True))
 
     if edit is None:
-        edit = click.confirm('Do you want to edit the project file?')
+        edit = click.confirm('Do you want to edit the project file?', default=True)
     if edit:
         echo('Launching editor to edit the project file...')
         click.edit(filename=config_path)
