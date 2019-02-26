@@ -24,7 +24,7 @@ check_and_pull() {
         git pull
     else
         # clone
-        git clone git@k4101.pixsoftware.de:7999/riptide/$git_name.git ../$dir_name
+        git clone ssh://git@k4101.pixsoftware.de:7999/riptide/$git_name.git ../$dir_name
         cd ../$dir_name
     fi
     eval $SUDO_PREFIX pip3 install -r requirements.txt && $SUDO_PREFIX pip3 install -e .
