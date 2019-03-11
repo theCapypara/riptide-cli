@@ -5,6 +5,7 @@ import click
 from click import echo
 
 from configcrunch import ReferencedDocumentNotFound
+from riptide.config.hosts import update_hosts_file
 from riptide_cli.click import ClickMainGroup
 from riptide_cli.command import base as base_commands
 from riptide_cli.command import db as db_commands
@@ -72,6 +73,8 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
                 write_project(ctx.system_config["project"], rename)
             except FileExistsError as err:
                 raise RiptideCliError(str(err), ctx) from err
+            # Update /etc/hosts entries for the loaded project
+            update_hosts_file(ctx.system_config, warning_callback=lambda msg: warn(msg))
 
             # Check if project setup command was run yet.
             ctx.project_is_set_up = os.path.exists(get_project_setup_flag_path(ctx.system_config["project"].folder()))
