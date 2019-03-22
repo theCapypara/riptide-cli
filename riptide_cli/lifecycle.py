@@ -92,6 +92,9 @@ async def start_project(ctx, services: Union[List[str], None], show_status=True)
     if services is None:
         services = project["app"]["services"].keys()
 
+    if len(services) < 1:
+        return
+
     echo("Starting services...")
     echo()
 
@@ -124,6 +127,9 @@ async def stop_project(ctx, services: Union[List[str], None], show_status=True):
 
     if services is None:
         services = project["app"]["services"].keys()
+
+    if len(services) < 1:
+        return
 
     echo("Stopping services...")
     echo()

@@ -39,18 +39,12 @@ def config_dump(ctx):
 
 @cli_section("Configuration")
 @click.command()
-@click.option('-f', '--force', is_flag=True,
-              help='Force creating a new configuration file, even if it already exists.')
-@click.option('--edit/--no-edit', default=None,
-              help='Specify whether you want to edit the file after creating it '
-                   '(or edit the existing file if it already exists). Default is ask.')
-def config_create_user(force, edit):
+@click.option('--factoryreset', is_flag=True,
+              help='Replace your configuration file with the default one (reset it).')
+def config_create_user(factoryreset):
     """ Creates or edits the user/system configuration file. """
     config_path = riptide_main_config_file()
-    if os.path.exists(config_path) and not force:
-        warn('The config file already exists. It is located at %s. '
-             'If you still want to replace it with the default config, pass --force.' % config_path)
-    else:
+    if not os.path.exists(config_path) or factoryreset:
         os.makedirs(riptide_config_dir(), exist_ok=True)
         copyfile(
             os.path.join(riptide_assets_dir(), 'blank_user_config.yml'),
@@ -58,27 +52,18 @@ def config_create_user(force, edit):
         )
         echo('Created config file at ' + style(config_path, bold=True))
 
-    if edit is None:
-        edit = click.confirm('Do you want to edit the config file?', default=True)
-    if edit:
-        echo('Launching editor to edit the config file...')
-        click.edit(filename=config_path)
+    echo('Launching editor to edit the config file...')
+    click.edit(filename=config_path)
 
 
 @cli_section("Configuration")
 @click.command()
-@click.option('-f', '--force', is_flag=True,
-              help='Force creating a new project file, even if it already exists.')
-@click.option('--edit/--no-edit', default=None,
-              help='Specify whether you want to edit the file after creating it '
-                   '(or edit the existing file if it already exists). Default is ask.')
-def config_create_project(force, edit):
+@click.option('--factoryreset', is_flag=True,
+              help='Replace your project file with the default one (reset it).')
+def config_create_project(factoryreset):
     """ Creates or edits the project file. """
     config_path = os.path.join(os.getcwd(), RIPTIDE_PROJECT_CONFIG_NAME)
-    if os.path.exists(config_path) and not force:
-        warn('A project file already exists in the current directory. '
-             'If you still want to replace it with the default project config, pass --force.')
-    else:
+    if not os.path.exists(config_path) or factoryreset:
         os.makedirs(riptide_config_dir(), exist_ok=True)
         copyfile(
             os.path.join(riptide_assets_dir(), 'blank_project_config.yml'),
@@ -86,11 +71,8 @@ def config_create_project(force, edit):
         )
         echo('Created project file at ' + style(config_path, bold=True))
 
-    if edit is None:
-        edit = click.confirm('Do you want to edit the project file?', default=True)
-    if edit:
-        echo('Launching editor to edit the project file...')
-        click.edit(filename=config_path)
+    echo('Launching editor to edit the project file...')
+    click.edit(filename=config_path)
 
 
 @cli_section("Service")
