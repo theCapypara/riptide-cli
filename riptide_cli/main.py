@@ -1,10 +1,12 @@
 import os
 import sys
+import warnings
 
 import click
 from click import echo
 
 from configcrunch import ReferencedDocumentNotFound
+from riptide.config.errors import RiptideDeprecationWarning
 from riptide.config.hosts import update_hosts_file
 from riptide_cli.click import ClickMainGroup
 from riptide_cli.command import base as base_commands
@@ -18,12 +20,8 @@ from riptide_cli.shell_integration import load_shell_integration
 from riptide.config.files import get_project_setup_flag_path
 from riptide.config.loader import load_config, write_project
 from riptide.engine.loader import load_engine
-
-"""
-todo: 
-also: Bash/Zsh auto-completion - https://click.palletsprojects.com/en/7.x/bashcomplete/
-
-"""
+warnings.simplefilter('ignore', DeprecationWarning)
+warnings.simplefilter('always', RiptideDeprecationWarning)
 
 
 def load_cli(ctx, project=None, rename=False, **kwargs):
