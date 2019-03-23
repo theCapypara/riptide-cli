@@ -86,4 +86,9 @@ def async_command(interrupt_handler=lambda _, __: True):
     return decorator
 
 
+def header(msg, bold=False):
+    """Uniform header style"""
+    return style(msg, bg='cyan', fg='white', bold=bold)
+
+
 TAB = '    '

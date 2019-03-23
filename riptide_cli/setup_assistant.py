@@ -5,7 +5,7 @@ from click import style, echo, getchar
 
 from riptide_cli.command.db import importt_impl
 from riptide_cli.command.importt import files_impl
-from riptide_cli.helpers import RiptideCliError, TAB
+from riptide_cli.helpers import RiptideCliError, TAB, header
 from riptide.config.files import get_project_setup_flag_path
 from riptide.db.driver import db_driver_for_service
 from riptide.db.environments import DbEnvironments
@@ -33,7 +33,7 @@ async def setup_assistant(ctx, force, skip):
     echo(style("> Press any key to continue...", fg='magenta'))
     getchar()
     echo()
-    echo(style("> BEGIN SETUP", bg='cyan', fg='white'))
+    echo(header("> BEGIN SETUP"))
     if "notices" in project["app"] and "usage" in project["app"]["notices"]:
         echo()
         echo(style("Usage notes for running %s" % project["app"]["name"], bold=True) + " with Riptide:")
@@ -45,13 +45,13 @@ async def setup_assistant(ctx, force, skip):
     if getchar(True).lower() == 'n':
         echo()
         echo()
-        echo(style("> END SETUP", bg='cyan', fg='white'))
+        echo(header("> END SETUP"))
         echo("Okay! To re-run this setup, pass the --force option.")
         finish(ctx)
         return
     echo()
     echo()
-    echo(style("> INTERACTIVE SETUP", bg='cyan', fg='white'))
+    echo(header("> INTERACTIVE SETUP"))
 
     # Q2: New or existing?
     echo(style("> Are you working on a ", fg='magenta') +
@@ -64,7 +64,7 @@ async def setup_assistant(ctx, force, skip):
         if "notices" in project["app"] and "installation" in project["app"]["notices"]:
             echo()
             echo()
-            echo(style("> NEW PROJECT", bg='cyan', fg='white'))
+            echo(header("> NEW PROJECT"))
             echo("Okay! Riptide can't guide you through the installation automatically.")
             echo("Please read these notes on how to run a first-time-installation for %s." % project["app"]["name"])
             echo()
@@ -76,7 +76,7 @@ async def setup_assistant(ctx, force, skip):
     # Existing project
     echo()
     echo()
-    echo(style("> EXISTING PROJECT", bg='cyan', fg='white'))
+    echo(header("> EXISTING PROJECT"))
 
     db_can_be_imported = DbEnvironments.has_db(project)
     files_can_be_imported = 'import' in project['app']
@@ -91,7 +91,7 @@ async def setup_assistant(ctx, force, skip):
     if db_can_be_imported:
         dbenv = DbEnvironments(project, engine)
         db_driver = db_driver_for_service.get(dbenv.db_service)
-        echo(TAB + style("> DATABASE IMPORT", bg='cyan', fg='white'))
+        echo(TAB + header("> DATABASE IMPORT"))
         echo(style("> Do you want to import a database (format %s)? [Y/n] " % dbenv.db_service['driver']['name'],
                    fg='magenta'), nl=False)
         if getchar(True).lower() != 'n':
@@ -119,9 +119,9 @@ async def setup_assistant(ctx, force, skip):
             echo("Skipping database import. If you change your mind, run db:import.")
 
     if files_can_be_imported:
-        echo(TAB + style("> FILE IMPORT", bg='cyan', fg='white'))
+        echo(TAB + header("> FILE IMPORT"))
         for key, entry in project['app']['import'].items():
-            echo(TAB + TAB + style("> %s IMPORT" % key, bg='cyan', fg='white'))
+            echo(TAB + TAB + header(("> %s IMPORT" % key)))
             echo(style("> Do you wish to import %s to <project>/%s? [Y/n] " % (entry['name'], entry['target'])
                        , fg='magenta'), nl=False)
             if getchar(True).lower() != 'n':
@@ -146,7 +146,7 @@ async def setup_assistant(ctx, force, skip):
             else:
                 echo()
     echo()
-    echo(style("> IMPORT DONE!", bg='cyan', fg='white', bold=True))
+    echo(header("> IMPORT DONE!", bold=True))
     echo("All files were imported.")
     finish(ctx)
 

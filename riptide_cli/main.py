@@ -15,7 +15,7 @@ from riptide_cli.command import importt as import_commands
 from riptide_cli.command import project as project_commands
 from riptide_cli.command.base import COMMAND_EDIT_CONFIG_USER
 
-from riptide_cli.helpers import RiptideCliError, warn, TAB
+from riptide_cli.helpers import RiptideCliError, warn, TAB, header
 from riptide_cli.shell_integration import load_shell_integration
 from riptide.config.files import get_project_setup_flag_path
 from riptide.config.loader import load_config, write_project
@@ -43,7 +43,11 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
     # Load the system config (and project).
     ctx.system_config = None
     try:
-        ctx.system_config = load_config(project, update_repositories=ctx.riptide_options['update'], update_func=lambda msg: echo(msg))
+        if ctx.riptide_options['update']:
+            echo(header("Updating Riptide repositories..."))
+        ctx.system_config = load_config(project,
+                                        update_repositories=ctx.riptide_options['update'],
+                                        update_func=lambda msg: echo(TAB + msg))
     except FileNotFoundError:
         # Don't show this if the user may have called the command. Since we don't know the invoked command at this
         # point, we just check if the name of the command is anywhere in the protected_args
@@ -84,6 +88,19 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
         except ConnectionError as ex:
             raise RiptideCliError('Connection to engine failed.', ctx) from ex
 
+    # If update is set, also pull images. Repositories are updated above (see load_config())
+    if ctx.riptide_options['update']:
+        echo(header("Updating images..."))
+        try:
+            ctx.engine.pull_images(ctx.system_config["project"],
+                                   line_reset="\033[2K\r" + TAB,
+                                   update_func=lambda msg: echo(TAB + msg, nl=False))
+        except Exception as ex:
+            raise RiptideCliError('Error updating an image', ctx) from ex
+
+    if ctx.riptide_options['update']:
+        echo(header("End of --update."))
+
     if 'RIPTIDE_SHELL_LOADED' not in os.environ and not ctx.resilient_parsing:
         # todo: supressable via argument.
         warn("Riptide shell integration not enabled.")
@@ -112,7 +129,7 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
 @click.option('-v', '--verbose', is_flag=True,
               help="Print errors and debugging information.")
 @click.option('-u', '--update', is_flag=True,
-              help="Update repositories before executing the command.")
+              help="Update repositories and pull images before executing the command.")
 @click.option('--rename', is_flag=True, hidden=True,
               help="If project with this name already exists at different location, rename it to use this location.")
 @click.pass_context
