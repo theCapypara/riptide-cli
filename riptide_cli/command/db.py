@@ -214,6 +214,8 @@ async def importt_impl(ctx, file):
     was_running = engine.status(project, ctx.parent.system_config)[db_name]
     if not was_running:
         await start_project(ctx, [db_name], show_status=False)
+        # TODO: Some databases need a while. How to do this better? mysqladmin for example doesn't help :(
+        await sleep(15)
 
     # 2. Import
     echo("Importing into database environment %s... this may take a while..." % env_name)

@@ -38,7 +38,7 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
     }
     ctx.riptide_options.update(kwargs)
 
-    # TODO: Refactoring arguments, and better verbose (use everywhere).
+    # TODO: Refactoring
 
     # Load the system config (and project).
     ctx.system_config = None
@@ -89,7 +89,7 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
             raise RiptideCliError('Connection to engine failed.', ctx) from ex
 
     # If update is set, also pull images. Repositories are updated above (see load_config())
-    if ctx.riptide_options['update']:
+    if ctx.riptide_options['update'] and ctx.system_config is not None and 'project' in ctx.system_config:
         echo(header("Updating images..."))
         try:
             ctx.engine.pull_images(ctx.system_config["project"],
