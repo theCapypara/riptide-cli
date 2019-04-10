@@ -1,5 +1,7 @@
 import os
 import sys
+
+import pkg_resources
 import warnings
 
 import click
@@ -8,6 +10,7 @@ from click import echo
 from configcrunch import ReferencedDocumentNotFound
 from riptide.config.errors import RiptideDeprecationWarning
 from riptide.config.hosts import update_hosts_file
+from riptide.util import get_riptide_version_raw
 from riptide_cli.click import ClickMainGroup
 from riptide_cli.command import base as base_commands
 from riptide_cli.command import db as db_commands
@@ -24,13 +27,22 @@ warnings.simplefilter('ignore', DeprecationWarning)
 warnings.simplefilter('always', RiptideDeprecationWarning)
 
 
-def load_cli(ctx, project=None, rename=False, **kwargs):
+def print_version():
+    echo("riptide_lib: %s" % get_riptide_version_raw())
+    echo("riptide_cli: %s" % pkg_resources.get_distribution("riptide_cli").version)
+
+
+def load_cli(ctx, project=None, rename=False, version=False, **kwargs):
     """
     Main function / Group callback to be executed before anything else.
     Loads the global arguments, populates the click context,
     loads the project + system config and the configured engine
     as well as all sub-commands.
     """
+    if version:
+        print_version()
+        exit()
+
     ctx.riptide_options = {
         "project": None,
         "verbose": False,
@@ -132,6 +144,8 @@ def load_cli(ctx, project=None, rename=False, **kwargs):
               help="Update repositories and pull images before executing the command.")
 @click.option('--rename', is_flag=True, hidden=True,
               help="If project with this name already exists at different location, rename it to use this location.")
+@click.option('--version', is_flag=True,
+              help="Print version and exit.")
 @click.pass_context
 def cli(*args, **kwargs):
     """

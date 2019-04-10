@@ -5,7 +5,10 @@ setup(
     version='0.1',
     packages=find_packages(),
     description= 'TODO',  # TODO
-    long_description= 'TODO',  # TODO
+    long_description='TODO - Project will be available starting May',  # TODO
+    url='https://riptide-docs.readthedocs.io/en/latest/',
+    author='Marco "Parakoopa" Köpcke',
+    license='MIT',
     install_requires=[
         'riptide_lib == 0.1',
         'Click >= 7.0',
@@ -15,7 +18,12 @@ setup(
     ],
     # TODO
     classifiers=[
+        'Development Status :: 4 - Beta',
         'Programming Language :: Python',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
     entry_points='''
         [console_scripts]
