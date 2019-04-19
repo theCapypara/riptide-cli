@@ -1,24 +1,31 @@
 from setuptools import setup, find_packages
 
+# README read-in
+from os import path
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.rst'), encoding='utf-8') as f:
+    long_description = f.read()
+# END README read-in
+
 setup(
     name='riptide_cli',
-    version='0.1',
+    version='0.1.1',
     packages=find_packages(),
-    description= 'TODO',  # TODO
-    long_description='TODO - Project will be available starting May',  # TODO
-    url='https://riptide-docs.readthedocs.io/en/latest/',
+    description='Tool to manage development environments for web applications using containers - CLI-Application',
+    long_description=long_description,
+    long_description_content_type='text/x-rst',
+    url='https://github.com/Parakoopa/riptide-cli/',
     author='Marco "Parakoopa" Köpcke',
     license='MIT',
     install_requires=[
-        'riptide_lib == 0.1',
+        'riptide_lib >= 0.1, < 0.2',
         'Click >= 7.0',
         'colorama >= 0.4',
         'click-help-colors >= 0.5',
         'tqdm >= 4.29',
     ],
-    # TODO
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 3 - Alpha',
         'Programming Language :: Python',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',

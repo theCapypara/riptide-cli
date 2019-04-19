@@ -24,7 +24,11 @@
 .. _repo:           https://github.com/Parakoopa/riptide-repo
 .. _docker_images:  https://github.com/Parakoopa/riptide-docker-images
 
-|docs|
+|build| |docs|
+
+.. |build| image:: https://jenkins.riptide.parakoopa.de/buildStatus/icon?job=riptide-cli%2Fmaster
+    :target: https://jenkins.riptide.parakoopa.de/blue/organizations/jenkins/riptide-cli/activity
+    :alt: Build Status
 
 .. |docs| image:: https://readthedocs.org/projects/riptide-docs/badge/?version=latest
     :target: https://riptide-docs.readthedocs.io/en/latest/?badge=latest
@@ -46,7 +50,7 @@ This repository contains the CLI application for Riptide. The library used for t
 
 The CLI application uses the Riptide lib package to manage files and to communicate with the container engine backend.
 
-It can be installed via pip by installing ``riptide_lib``.
+It can be installed via pip by installing ``riptide_cli``.
 
 Documentation
 -------------
