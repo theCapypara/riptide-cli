@@ -8,7 +8,7 @@ with open(path.join(this_directory, 'README.rst'), encoding='utf-8') as f:
 # END README read-in
 
 setup(
-    name='riptide_cli',
+    name='riptide-cli',
     version='0.1.1',
     packages=find_packages(),
     description='Tool to manage development environments for web applications using containers - CLI-Application',
@@ -18,7 +18,7 @@ setup(
     author='Marco "Parakoopa" Köpcke',
     license='MIT',
     install_requires=[
-        'riptide_lib >= 0.1, < 0.2',
+        'riptide-lib >= 0.1, < 0.2',
         'Click >= 7.0',
         'colorama >= 0.4',
         'click-help-colors >= 0.5',

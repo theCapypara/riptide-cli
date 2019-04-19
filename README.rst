@@ -50,7 +50,7 @@ This repository contains the CLI application for Riptide. The library used for t
 
 The CLI application uses the Riptide lib package to manage files and to communicate with the container engine backend.
 
-It can be installed via pip by installing ``riptide_cli``.
+It can be installed via pip by installing ``riptide-cli``.
 
 Documentation
 -------------
