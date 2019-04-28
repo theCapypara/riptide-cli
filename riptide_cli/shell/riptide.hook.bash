@@ -4,7 +4,7 @@
 
 SCRIPTPATH=$(dirname "${BASH_SOURCE[0]}")
 
-. "$SCRIPTPATH/common.sh"
+. "$SCRIPTPATH/riptide.hook.common.sh"
 
 riptide_prompt_hook() {
     if [ "$(pwd)" != "$RIPTIDE_BASH_LAST_PWD" ]; then

@@ -38,5 +38,7 @@ setup(
         riptide=riptide_cli.main:cli
     ''',
     # Scripts for the shell integration, meant to be sourced.
-    scripts=['riptide_cli/shell/riptide.hook.bash', 'riptide_cli/shell/riptide.hook.zsh']
+    scripts=['riptide_cli/shell/riptide.hook.bash',
+             'riptide_cli/shell/riptide.hook.zsh',
+             'riptide_cli/shell/riptide.hook.common.sh']
 )

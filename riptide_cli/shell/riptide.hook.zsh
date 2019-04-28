@@ -4,7 +4,7 @@
 
 SCRIPTPATH=$(dirname ${(%):-%x})
 
-. "$SCRIPTPATH/common.sh"
+. "$SCRIPTPATH/riptide.hook.common.sh"
 
 if [[ ${chpwd_functions[(I)riptide_cwdir_hook]} -eq 0 ]]; then
   chpwd_functions+=(riptide_cwdir_hook)
