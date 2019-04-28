@@ -11,6 +11,7 @@ setup(
     name='riptide-cli',
     version='0.1.1',
     packages=find_packages(),
+    package_data={'riptide_cli': ['shell/*']},
     description='Tool to manage development environments for web applications using containers - CLI-Application',
     long_description=long_description,
     long_description_content_type='text/x-rst',
@@ -36,4 +37,6 @@ setup(
         [console_scripts]
         riptide=riptide_cli.main:cli
     ''',
+    # Scripts for the shell integration, meant to be sourced.
+    scripts=['riptide_cli/shell/riptide.hook.bash', 'riptide_cli/shell/riptide.hook.zsh']
 )
