@@ -9,7 +9,7 @@ with open(path.join(this_directory, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='riptide-cli',
-    version='0.2.0',
+    version='0.2.1',
     packages=find_packages(),
     package_data={'riptide_cli': ['shell/*']},
     description='Tool to manage development environments for web applications using containers - CLI-Application',
@@ -36,7 +36,7 @@ setup(
     entry_points='''
         [console_scripts]
         riptide=riptide_cli.main:cli
-        riptide_upgrade=riptide_cli.self_updater.update
+        riptide_upgrade=riptide_cli.self_updater:update
     ''',
     # Scripts for the shell integration, meant to be sourced.
     scripts=['riptide_cli/shell/riptide.hook.bash',
