@@ -55,5 +55,4 @@ def run_cmd(command_name, arguments):
 
     # check if command is actually an alias
     command_name = system_config["project"]["app"]["commands"][command_name].resolve_alias()["$name"]
-
-    engine.cmd(system_config["project"], command_name, arguments)
+    sys.exit(engine.cmd(system_config["project"], command_name, arguments))

@@ -1,4 +1,5 @@
 import os
+import sys
 
 import click
 from click import echo, style, clear
@@ -218,7 +219,7 @@ def cmd(ctx, command, arguments):
 
     # Run Command
     try:
-        engine.cmd(project, command, arguments)
+        sys.exit(engine.cmd(project, command, arguments))
     except ExecError as err:
         raise RiptideCliError(str(err), ctx) from err
 
