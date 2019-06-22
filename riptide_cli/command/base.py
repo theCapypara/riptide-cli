@@ -22,19 +22,22 @@ def load(ctx):
 @cli_section("Configuration")
 @click.command()
 @click.pass_context
-def config_dump(ctx):
+@click.option('--system', is_flag=True, default=False,
+              help='Also include system-internal keys (keys with $).')
+def config_dump(ctx, system=False):
     """
     Outputs the configuration currently in use, as interpreted by Riptide.
     The result is the final configuration that was created by merging all configuration files together
     and resolving all variables.
-    Includes some internal system keywords (keys with $, except $ref).
     """
     echo("# Riptide configuration")
     echo()
     echo("# This is the final configuration that was created by merging all configuration files together")
     echo("# and resolving all variables.")
-    echo("# Includes some internal system keywords (keys with $, except $ref).")
-    echo(yaml.dump(ctx.parent.system_config.to_dict(), default_flow_style=False))
+    final_dict = ctx.parent.system_config.to_dict()
+    if not system:
+        final_dict = filter_config_dict_recursive_key(final_dict)
+    echo(yaml.dump(final_dict, default_flow_style=False, sort_keys=False))
 
 
 @cli_section("Configuration")
@@ -84,3 +87,12 @@ def status(ctx):
     This includes the status of the current project (if any is loaded) and all services of that project.
     """
     status_project(ctx)
+
+
+def filter_config_dict_recursive_key(final_dict):
+    """Filters the dict recursively, removing all $-entries. Not the best performance-solution right now."""
+    if not isinstance(final_dict, dict):
+        return final_dict
+    filtered = {k: v for k, v in final_dict.items() if not k.startswith('$')}
+    # Recursion
+    return {k: filter_config_dict_recursive_key(v) for k, v in filtered.items()}
