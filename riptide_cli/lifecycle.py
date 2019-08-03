@@ -174,7 +174,11 @@ def status_project(ctx, limit_services=None):
         echo(TAB + style('Project is not yet set up. Run the setup command.', fg='yellow'))
         return
     else:
-        for name, status in status_for(project, engine, ctx.parent.system_config).items():
+        status_items = status_for(project, engine, ctx.parent.system_config).items()
+        if len(status_items) < 1:
+            echo(TAB + "Project loaded, but it contains no services.")
+
+        for name, status in status_items:
             if limit_services and name not in limit_services:
                 continue
             echo(TAB + style(name + ':', fg='green' if status.running else 'red', bold=True))
