@@ -15,10 +15,10 @@ CMD_SEP = style('-----', fg='cyan')
 
 
 async def setup_assistant(ctx, force, skip):
-    project = ctx.parent.system_config["project"]
-    engine = ctx.parent.engine
+    project = ctx.system_config["project"]
+    engine = ctx.engine
 
-    if ctx.parent.project_is_set_up and not force:
+    if ctx.project_is_set_up and not force:
         raise RiptideCliError("The project is already set up. If you still want to run this command, pass --force.",
                               ctx)
 
@@ -159,7 +159,7 @@ def finish(ctx):
          "if the usage instructions at the beginning don't require you to do anything else.")
     echo("If you need to read those again run " + style("riptide notes", bold=True))
     echo()
-    project = ctx.parent.system_config["project"]
+    project = ctx.system_config["project"]
     if "commands" in project["app"]:
         cmd = list(project["app"]["commands"].keys())[0]
         some_commands_in_project = ", ".join(list(project["app"]["commands"].keys())[:3])

@@ -86,8 +86,8 @@ async def start_project(ctx, services: Union[List[str], None], show_status=True)
     Starts a project by starting all it's services (or a subset).
     If show_status is true, shows status after that.
     """
-    project = ctx.parent.system_config["project"]
-    engine = ctx.parent.engine
+    project = ctx.system_config["project"]
+    engine = ctx.engine
 
     if services is None:
         services = project["app"]["services"].keys()
@@ -122,8 +122,8 @@ async def stop_project(ctx, services: Union[List[str], None], show_status=True):
     Stops a project by stopping all it's services (or a subset).
     If show_status is true, shows status after that.
     """
-    project = ctx.parent.system_config["project"]
-    engine = ctx.parent.engine
+    project = ctx.system_config["project"]
+    engine = ctx.engine
 
     if services is None:
         services = project["app"]["services"].keys()
@@ -160,8 +160,8 @@ def status_project(ctx, limit_services=None):
 
     """
     echo("Status:")
-    engine = ctx.parent.engine
-    system_config = ctx.parent.system_config
+    engine = ctx.engine
+    system_config = ctx.system_config
     project = None
     if system_config is None:
         echo(TAB + style('No system configuration found.', fg='yellow'))
@@ -170,11 +170,11 @@ def status_project(ctx, limit_services=None):
     if project is None:
         echo(TAB + style('No project found.', fg='yellow'))
         return
-    if not ctx.parent.project_is_set_up:
+    if not ctx.project_is_set_up:
         echo(TAB + style('Project is not yet set up. Run the setup command.', fg='yellow'))
         return
     else:
-        status_items = status_for(project, engine, ctx.parent.system_config).items()
+        status_items = status_for(project, engine, ctx.system_config).items()
         if len(status_items) < 1:
             echo(TAB + "Project loaded, but it contains no services.")
 

@@ -8,9 +8,9 @@ from riptide.config.loader import load_config
 from riptide.engine.loader import load_engine
 
 
-def load_shell_integration(system_config: Config):
+def update_shell_integration(system_config: Config):
     """
-    'Loads' the shell integration by writing a file containing the project name into the _riptide folder
+    Updates the shell integration by writing a file containing the project name into the _riptide folder
     and writing executables for all commands to the bin-folder.
     """
     # Write project name to file
