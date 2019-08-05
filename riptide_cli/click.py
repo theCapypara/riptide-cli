@@ -1,7 +1,7 @@
 """Click extension module"""
 
 # TODO: Colored subcommand help
-from click import Option
+from click import Option, Command
 from click_help_colors import HelpColorsGroup
 
 
@@ -16,6 +16,12 @@ class ClickMainGroup(HelpColorsGroup):
     def __init__(self, *args, **kwargs):
         # Dedicated help option not supported for this group because of the way it would catch subcommand help options.
         super().__init__(*args, **kwargs, add_help_option=False)
+
+    def invoke(self, ctx):
+        """'Fix' for Click not reading the '--version' or '--rename' flag without a sub command."""
+        if not ctx.protected_args and (("version" in ctx.params and ctx.params["version"]) or ("rename" in ctx.params and ctx.params["rename"])):
+            return Command.invoke(self, ctx)
+        return super().invoke(ctx)
 
     def format_commands(self, ctx, formatter):
         """
