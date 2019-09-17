@@ -4,6 +4,8 @@ from click import style, echo, ClickException
 from click._compat import get_text_stderr
 from functools import update_wrapper
 
+from schema import SchemaError
+
 
 def get_is_verbose(ctx):
     """Returns whether or not verbose mode is enabled"""

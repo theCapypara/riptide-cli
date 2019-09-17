@@ -24,3 +24,6 @@ CMD_CMD = 'cmd'
 CMD_SETUP = 'setup'
 CMD_EXEC = 'exec'
 CMD_NOTES = 'notes'
+
+CMD_PROJECT_LIST = 'project-list'
+CMD_PROJECT_REMOVE = 'project-remove'
