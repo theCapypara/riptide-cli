@@ -23,7 +23,7 @@ setup(
         'Click >= 7.0',
         'colorama >= 0.4',
         'click-help-colors >= 0.5',
-        'tqdm >= 4.29',
+        'tqdm >= 4.38',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -32,6 +32,7 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
     entry_points='''
         [console_scripts]
