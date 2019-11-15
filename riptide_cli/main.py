@@ -19,8 +19,8 @@ warnings.simplefilter('always', RiptideDeprecationWarning)
 
 
 def print_version():
-    echo("riptide_lib: %s" % get_riptide_version_raw())
-    echo("riptide_cli: %s" % pkg_resources.get_distribution("riptide_cli").version)
+    echo(f"riptide_lib: {get_riptide_version_raw()}")
+    echo(f"riptide_cli: {pkg_resources.get_distribution('riptide_cli').version}")
 
 
 @click.group(
@@ -73,9 +73,11 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
         if project in projects:
             project_file = projects[project]
         else:
-            raise RiptideCliError("Project %s not found. "
-                                  "--project/-P can only be used if the project was loaded with Riptide at least once."
-                                  % project, ctx)
+            raise RiptideCliError(
+                f"Project {project} not found. --project/-P "
+                f"can only be used if the project was loaded with Riptide at least once.",
+                ctx
+            )
 
     # Setup basic variables
     ctx.riptide_options = {

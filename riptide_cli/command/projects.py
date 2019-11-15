@@ -39,7 +39,7 @@ def load(main):
         """
         projects = load_projects()
         if project not in projects:
-            raise RiptideCliError("Project %s not found." % project, ctx)
+            raise RiptideCliError(f"Project {project} not found.", ctx)
         remove_project(project)
-        click.echo(click.style("Project %s removed." % project))
+        click.echo(click.style(f"Project {project} removed."))
 

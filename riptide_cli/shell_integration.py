@@ -21,7 +21,7 @@ def update_shell_integration(system_config: Config):
     bin_folder = os.path.join(meta_folder, 'bin')
     os.makedirs(bin_folder, exist_ok=True)
 
-    command_files = set([f for f in os.listdir(bin_folder) if os.path.isfile(os.path.join(bin_folder, f))])
+    command_files = {f for f in os.listdir(bin_folder) if os.path.isfile(os.path.join(bin_folder, f))}
     if "commands" in system_config["project"]["app"]:
         commands = set(system_config["project"]["app"]["commands"].keys())
     else:
@@ -37,11 +37,11 @@ def update_shell_integration(system_config: Config):
     for entry in to_add:
         path_to_cmd_file = os.path.join(bin_folder, entry)
         with open(path_to_cmd_file, 'w') as file:
-            file.write("""#!%s
+            file.write(f"""#!{sys.executable}
 import sys
 from riptide_cli.shell_integration import run_cmd
-run_cmd("%s", sys.argv[1:])
-""" % (sys.executable, entry))
+run_cmd("{entry}", sys.argv[1:])
+""")
 
         # Make command alias executable
         st = os.stat(path_to_cmd_file)

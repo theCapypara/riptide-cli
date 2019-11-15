@@ -124,7 +124,7 @@ def load(main):
         engine = ctx.engine
 
         if "services" not in project["app"] or interactive_service not in project["app"]["services"]:
-            raise RiptideCliError("The service %s was not found." % interactive_service, ctx=ctx)
+            raise RiptideCliError(f"The service {interactive_service} was not found.", ctx=ctx)
 
         if services is not None:
             normal_services = services.split(",")
@@ -140,10 +140,10 @@ def load(main):
         echo(style("(1/3) Starting other services...", bg='cyan', fg='white'))
         await start_project(ctx, normal_services, show_status=False)
 
-        echo(style("(2/3) Stopping %s..." % interactive_service, bg='cyan', fg='white'))
+        echo(style(f"(2/3) Stopping {interactive_service}...", bg='cyan', fg='white'))
         await stop_project(ctx, [interactive_service], show_status=False)
 
-        echo(style("(3/3) Starting in %s foreground mode..." % interactive_service, bg='cyan', fg='white'))
+        echo(style(f"(3/3) Starting in {interactive_service} foreground mode...", bg='cyan', fg='white'))
         engine.service_fg(project, interactive_service, arguments)
 
     @cli_section("Service")

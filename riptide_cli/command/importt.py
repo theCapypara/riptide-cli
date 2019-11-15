@@ -63,18 +63,18 @@ def files_impl(ctx, key, path_to_import):
 
     import_spec = project["app"]["import"][key]
     if os.path.isabs(import_spec["target"]):
-        raise RiptideCliError("The import key %s contains an absolute target path. All target paths must be relative to project" % key, ctx)
+        raise RiptideCliError(f"The import key {key} contains an absolute target path. All target paths must be relative to project", ctx)
 
     destination = os.path.join(project.folder(), import_spec["target"])
     source_is_file = os.path.isfile(path_to_import)
 
     if os.path.exists(destination) and os.path.isfile(destination):
-        raise RiptideCliError("The target file (%s) already exists" % import_spec["target"], ctx)
+        raise RiptideCliError(f"The target file ({import_spec['target']}) already exists", ctx)
 
     if source_is_file and os.path.exists(destination):  # implict: target is directory
         raise RiptideCliError("The target is a diretory, but the path to import points to a file. Can't continue.", ctx)
 
-    echo("Importing %s (%s) from %s" % (key, import_spec["target"], path_to_import))
+    echo(f"Importing {key} ({import_spec['target']}) from {path_to_import}")
     echo("Copying... this can take some time...")
     os.makedirs(os.path.dirname(destination ), exist_ok=True)
     try:

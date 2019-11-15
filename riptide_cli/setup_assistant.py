@@ -28,7 +28,7 @@ async def setup_assistant(ctx, force, skip):
         return
 
     echo(style("Thank you for using Riptide!", fg='cyan', bold=True))
-    echo("This command will guide you through the initial setup for %s." % project["name"])
+    echo(f"This command will guide you through the initial setup for {project['name']}.")
     echo(style("Please follow it very carefully, it won't take long!", bold=True))
     echo(style("> Press any key to continue...", fg='magenta'))
     getchar()
@@ -36,7 +36,7 @@ async def setup_assistant(ctx, force, skip):
     echo(header("> BEGIN SETUP"))
     if "notices" in project["app"] and "usage" in project["app"]["notices"]:
         echo()
-        echo(style("Usage notes for running %s" % project["app"]["name"], bold=True) + " with Riptide:")
+        echo(style(f"Usage notes for running {project['app']['name']}", bold=True) + " with Riptide:")
         echo(TAB + TAB.join(project["app"]["notices"]["usage"].splitlines(True)))
     echo()
 
@@ -66,7 +66,7 @@ async def setup_assistant(ctx, force, skip):
             echo()
             echo(header("> NEW PROJECT"))
             echo("Okay! Riptide can't guide you through the installation automatically.")
-            echo("Please read these notes on how to run a first-time-installation for %s." % project["app"]["name"])
+            echo(f"Please read these notes on how to run a first-time-installation for {project['app']['name']}.")
             echo()
             echo(style("Installation instructions:", bold=True))
             echo(TAB + TAB.join(project["app"]["notices"]["installation"].splitlines(True)))
@@ -83,7 +83,7 @@ async def setup_assistant(ctx, force, skip):
 
     if not db_can_be_imported and not files_can_be_imported:
         # Nothing to import
-        echo("The app %s does not specify a database or files to import. You are already done!" % project["app"]["name"])
+        echo(f"The app {project['app']['name']} does not specify a database or files to import. You are already done!")
         finish(ctx)
         return
 
@@ -92,7 +92,7 @@ async def setup_assistant(ctx, force, skip):
         dbenv = DbEnvironments(project, engine)
         db_driver = db_driver_for_service.get(dbenv.db_service)
         echo(TAB + header("> DATABASE IMPORT"))
-        echo(style("> Do you want to import a database (format %s)? [Y/n] " % dbenv.db_service['driver']['name'],
+        echo(style(f"> Do you want to import a database (format {dbenv.db_service['driver']['name']})? [Y/n] ",
                    fg='magenta'), nl=False)
         if getchar(True).lower() != 'n':
             # Import db
@@ -121,8 +121,8 @@ async def setup_assistant(ctx, force, skip):
     if files_can_be_imported:
         echo(TAB + header("> FILE IMPORT"))
         for key, entry in project['app']['import'].items():
-            echo(TAB + TAB + header(("> %s IMPORT" % key)))
-            echo(style("> Do you wish to import %s to <project>/%s? [Y/n] " % (entry['name'], entry['target'])
+            echo(TAB + TAB + header(f"> {key} IMPORT"))
+            echo(style(f"> Do you wish to import {entry['name']} to <project>/{entry['target']}? [Y/n] "
                        , fg='magenta'), nl=False)
             if getchar(True).lower() != 'n':
                 # Import files
@@ -165,12 +165,15 @@ def finish(ctx):
         some_commands_in_project = ", ".join(list(project["app"]["commands"].keys())[:3])
         if 'RIPTIDE_SHELL_LOADED' not in os.environ:
             echo("It seems that the Riptide shell integration is not enabled yet.")
-            echo("It is available for Bash and Zsh and allows you to run custom commands such as %s more easily."
-                 % some_commands_in_project)
+            echo(
+                f"It is available for Bash and Zsh and allows you to run custom commands such as "
+                f"{some_commands_in_project} more easily."
+            )
             echo("If you want to set it up, have a look at the manual.")
         else:
-            echo("If you want to use commands like %s leave and re-enter the project directory. " % some_commands_in_project)
+            echo(f"If you want to use commands like {some_commands_in_project} leave and re-enter the project directory. ")
 
-        echo("You don't need to use 'riptide cmd' then: '%s cmd %s arg1 arg2' -> '%s arg1 arg2'"
-             % (style("riptide", bold=True), cmd, style(cmd, bold=True)))
+        echo(f"You don't need to use 'riptide cmd' then: "
+             f"'{style('riptide', bold=True)} cmd {cmd} arg1 arg2' -> "
+             f"'{style(cmd, bold=True)} arg1 arg2'")
     open(get_project_setup_flag_path(project.folder()), 'a').close()

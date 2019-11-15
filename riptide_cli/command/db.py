@@ -130,7 +130,7 @@ def load(main):
             echo()
         except FileNotFoundError:
             raise RiptideCliError("Envrionment with this name does not exist.", ctx)
-        except EnvironmentError:
+        except OSError:
             raise RiptideCliError("Can not delete the environment that is currently active.", ctx)
         except Exception as ex:
             raise RiptideCliError("Error deleting environment", ctx) from ex
@@ -210,11 +210,11 @@ def load(main):
             await start_project(ctx, [db_name], show_status=False)
 
         # 2. Export
-        echo("Exporting from %s... this may take a while..." % env_name)
+        echo(f"Exporting from {env_name}... this may take a while...")
         try:
             db_driver.export(engine, os.path.abspath(file))
             echo()
-            echo("Environment %s exported." % env_name)
+            echo(f"Environment {env_name} exported.")
             echo()
         except FileNotFoundError:
             raise RiptideCliError("Environment does not exist. Create it first with db:create", ctx)
@@ -271,11 +271,11 @@ async def importt_impl(ctx, file):
         await sleep(15)
 
     # 2. Import
-    echo("Importing into database environment %s... this may take a while..." % env_name)
+    echo(f"Importing into database environment {env_name}... this may take a while...")
     try:
         db_driver.importt(engine, os.path.abspath(file))
         echo()
-        echo("Database environment %s imported." % env_name)
+        echo(f"Database environment {env_name} imported.")
         echo()
         return True
     except FileNotFoundError:

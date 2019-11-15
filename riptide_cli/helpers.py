@@ -40,7 +40,7 @@ class RiptideCliError(ClickException):
                 current_err = current_err.__context__
                 # Filter duplicate exception messages. 'schema' used by configcrunch does that for example.
                 if previous_message != str(current_err):
-                    echo(style('>> Caused by: %s' % str(current_err), bg='red', fg='white'), file=file)
+                    echo(style(f'>> Caused by: {str(current_err)}', bg='red', fg='white'), file=file)
                 previous_message = str(current_err)
             echo()
             echo(style('Use -v to show stack traces.', fg='yellow'), file=file)

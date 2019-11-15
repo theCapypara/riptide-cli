@@ -39,7 +39,7 @@ def load_riptide_core(ctx):
             # Don't show this if the user may have called the command. Since we don't know the invoked command at this
             # point, we just check if the name of the command is anywhere in the protected_args
             if not ctx.resilient_parsing:
-                warn("You don't have a configuration file for Riptide yet. Use %s to create one." % CMD_CONFIG_EDIT_USER)
+                warn(f"You don't have a configuration file for Riptide yet. Use {CMD_CONFIG_EDIT_USER} to create one.")
                 echo()
         except ReferencedDocumentNotFound as ex:
             raise RiptideCliError(
