@@ -217,7 +217,7 @@ def load(main):
             echo(f"Environment {env_name} exported.")
             echo()
         except FileNotFoundError:
-            raise RiptideCliError("Environment does not exist. Create it first with db:create", ctx)
+            raise RiptideCliError("Environment does not exist. Create it first with db-create", ctx)
         except Exception as ex:
             raise RiptideCliError("Error exporting environment", ctx) from ex
 
@@ -240,7 +240,7 @@ async def switch_impl(ctx, name):
         echo("Environment switched to: " + style(name, bold=True))
         echo()
     except FileNotFoundError:
-        raise RiptideCliError("Environment does not exist. Create it with db:new or db:copy.", ctx)
+        raise RiptideCliError("Environment does not exist. Create it with db-new or db-copy.", ctx)
     except Exception as ex:
         raise RiptideCliError("Error switching environments", ctx) from ex
 
