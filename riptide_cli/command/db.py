@@ -7,7 +7,7 @@ from click import style, echo
 from riptide_cli.command.constants import CMD_DB_LIST, CMD_DB_SWITCH, CMD_DB_NEW, CMD_DB_DROP, CMD_DB_COPY, \
     CMD_DB_IMPORT, CMD_DB_STATUS, CMD_DB_EXPORT
 from riptide_cli.helpers import cli_section, TAB, RiptideCliError, async_command
-from riptide_cli.lifecycle import status_project, stop_project, start_project
+from riptide_cli.lifecycle import stop_project, start_project
 from riptide.db.driver import db_driver_for_service
 from riptide.db.environments import DbEnvironments
 from riptide_cli.loader import cmd_constraint_project_loaded, load_riptide_core
@@ -27,19 +27,29 @@ def load(main):
     @main.command(CMD_DB_STATUS)
     @click.pass_context
     def status(ctx):
-        """ Status of database service and active environment """
+        """
+        Print information and status of the database.
+        """
         load_riptide_core(ctx)
         cmd_constraint_has_db(ctx)
 
         project = ctx.system_config["project"]
         engine = ctx.engine
         dbenv = DbEnvironments(project, engine)
+        db_driver = db_driver_for_service.get(dbenv.db_service)
+
+        running = engine.service_status(project, dbenv.db_service["$name"], ctx.system_config)
+
+        if running:
+            echo(f"{'Status':<20}: " + style("Running", bold=True, fg="green"))
+        else:
+            echo(f"{'Status':<20}: " + style("Not running", bold=True, fg="red"))
+
+        for key,label in db_driver.collect_info().items():
+            echo(f"{key:<20}: {label}")
 
         current = dbenv.currently_selected_name()
-
-        echo("Currently active database environment: " + style(current, bold=True))
-        echo()
-        status_project(ctx, limit_services=[dbenv.db_service["$name"]])
+        echo("Active environment  : " + style(current, bold=True))
 
 
     @cli_section("Database")
