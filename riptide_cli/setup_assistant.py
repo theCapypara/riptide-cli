@@ -161,19 +161,11 @@ def finish(ctx):
     echo()
     project = ctx.system_config["project"]
     if "commands" in project["app"]:
-        cmd = list(project["app"]["commands"].keys())[0]
         some_commands_in_project = ", ".join(list(project["app"]["commands"].keys())[:3])
         if 'RIPTIDE_SHELL_LOADED' not in os.environ:
             echo("It seems that the Riptide shell integration is not enabled yet.")
-            echo(
-                f"It is available for Bash and Zsh and allows you to run custom commands such as "
-                f"{some_commands_in_project} more easily."
-            )
             echo("If you want to set it up, have a look at the manual.")
         else:
             echo(f"If you want to use commands like {some_commands_in_project} leave and re-enter the project directory. ")
 
-        echo(f"You don't need to use 'riptide cmd' then: "
-             f"'{style('riptide', bold=True)} cmd {cmd} arg1 arg2' -> "
-             f"'{style(cmd, bold=True)} arg1 arg2'")
     open(get_project_setup_flag_path(project.folder()), 'a').close()
