@@ -13,7 +13,7 @@ from riptide_cli.helpers import cli_section, async_command, RiptideCliError, TAB
 from riptide_cli.lifecycle import start_project, stop_project, display_errors, status_project
 from riptide_cli.loader import cmd_constraint_project_loaded, load_riptide_core
 from riptide_cli.setup_assistant import setup_assistant
-from riptide.engine.abstract import ExecError
+from riptide.engine.abstract import ExecError, AbstractEngine
 
 
 def interrupt_handler(ctx, ex: Union[KeyboardInterrupt, SystemExit]):
@@ -250,21 +250,26 @@ def load(main):
     @main.command(CMD_EXEC)
     @click.pass_context
     @click.option('--root', is_flag=True, default=False, help='Run the shell as the root user instead')
+    @click.option('--command', default=None, help='Run a custom command instead')
     @click.argument('service', required=False)
-    def exec_cmd(ctx, service, root):
+    def exec_cmd(ctx, service, root, command):
         """
         Opens a shell into a service container.
         The shell is run interactively (Stdout/Stderr/Stdin are attached).
         If you are currently in a subdirectory of 'src' (see project configuration), then the shell
         will be executed inside of this directory. Otherwise the shell will be executed in the root
         of the 'src' directory. Shell is executed as the current user + group (may be named differently inside the container).
+
+        If --command is given, a command will be executed in the shell. Riptide will not return the exit code of the
+        command. Please consider using Command objects instead (riptide cmd). A warning will be printed to stderr first,
+        when using this option.
         """
         load_riptide_core(ctx)
         cmd_constraint_engine_support_execs(ctx)
         cmd_constraint_project_set_up(ctx)
 
         project = ctx.system_config["project"]
-        engine = ctx.engine
+        engine: AbstractEngine = ctx.engine
 
         if service is None:
             if project["app"].get_service_by_role('main') is None:
@@ -273,7 +278,27 @@ def load(main):
 
         try:
             cols, lines = os.get_terminal_size()
-            engine.exec(project, service, cols=cols, lines=lines, root=root)
+            if not command:
+                engine.exec(project, service, cols=cols, lines=lines, root=root)
+            else:
+                if 'RIPTIDE_DONT_SHOW_EXEC_WARNING' not in os.environ:
+                    main_command = command.split(" ")[0]
+                    warn(f"""Using exec --command is not recommended. Please consider creating a Command object instead.
+You might be able to create a command object for this command by adding the following to
+the commands in your project:
+
+    {main_command}:
+        image: "{project["app"]["services"][service]["image"]}"
+        command: {main_command}
+    
+After that, run `riptide status` to refresh the shell integration. Then you can directly run the command on your shell:
+
+    {command}
+
+Please also see the documentation for more information. 
+To suppress this warning, set the environment variable RIPTIDE_DONT_SHOW_EXEC_WARNING.""")
+
+                engine.exec_custom(project, service, command, cols=cols, lines=lines, root=root)
         except ExecError as err:
             raise RiptideCliError(str(err), ctx) from err
 
