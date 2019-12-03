@@ -34,12 +34,6 @@ def interrupt_handler(ctx, ex: Union[KeyboardInterrupt, SystemExit]):
     exit(1)
 
 
-def cmd_constraint_engine_support_execs(ctx):
-    cmd_constraint_project_loaded(ctx)
-    if not ctx.engine.supports_exec():
-        raise RiptideCliError("The engine you are using does not support exec.", ctx)
-
-
 def cmd_constraint_project_set_up(ctx):
     cmd_constraint_project_loaded(ctx)
     if not ctx.project_is_set_up:
@@ -265,7 +259,6 @@ def load(main):
         when using this option.
         """
         load_riptide_core(ctx)
-        cmd_constraint_engine_support_execs(ctx)
         cmd_constraint_project_set_up(ctx)
 
         project = ctx.system_config["project"]
