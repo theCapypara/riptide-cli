@@ -6,6 +6,7 @@ from click import echo, style
 from click.exceptions import Exit
 from typing import Union
 
+from riptide.config.document.command import KEY_IDENTIFIER_IN_SERVICE_COMMAND
 from riptide.engine.results import ResultQueue
 from riptide_cli.command.constants import CMD_STATUS, CMD_START, CMD_START_FG, CMD_STOP, CMD_RESTART, CMD_CMD, \
     CMD_SETUP, CMD_EXEC, CMD_NOTES
@@ -224,7 +225,7 @@ def load(main):
                     # alias
                     click.echo(TAB + "- " + click.style(name, bold=True) + " (alias for " + cmd["aliases"] + ")")
                 else:
-                    # normal cmd
+                    # normal / in service cmd
                     click.echo(TAB + "- " + click.style(name, bold=True))
             return
 
@@ -233,10 +234,16 @@ def load(main):
 
         # check if command is actually an alias
         command = project["app"]["commands"][command].resolve_alias()["$name"]
+        cmd_obj = project["app"]["commands"][command]
 
         # Run Command
         try:
-            sys.exit(engine.cmd(project, command, arguments))
+            if KEY_IDENTIFIER_IN_SERVICE_COMMAND in cmd_obj:
+                # In Service comamnd
+                sys.exit(engine.cmd_in_service(project, command, cmd_obj.get_service(project["app"]), arguments))
+            else:
+                # Normal command
+                sys.exit(engine.cmd(project, command, arguments))
         except ExecError as err:
             raise RiptideCliError(str(err), ctx) from err
 

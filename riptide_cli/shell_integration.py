@@ -2,6 +2,7 @@ import os
 import stat
 import sys
 
+from riptide.config.document.command import KEY_IDENTIFIER_IN_SERVICE_COMMAND
 from riptide.config.document.config import Config
 from riptide.config.files import get_project_meta_folder
 from riptide.config.loader import load_config
@@ -55,4 +56,17 @@ def run_cmd(command_name, arguments):
 
     # check if command is actually an alias
     command_name = system_config["project"]["app"]["commands"][command_name].resolve_alias()["$name"]
-    sys.exit(engine.cmd(system_config["project"], command_name, arguments))
+    cmd_obj = system_config["project"]["app"]["commands"][command_name]
+
+    if KEY_IDENTIFIER_IN_SERVICE_COMMAND in cmd_obj:
+        # In Service comamnd
+        sys.exit(engine.cmd_in_service(
+            system_config["project"],
+            command_name,
+            cmd_obj.get_service(system_config["project"]["app"]),
+            arguments
+        ))
+    else:
+        # Normal comamnd
+        sys.exit(engine.cmd(system_config["project"], command_name, arguments))
+
