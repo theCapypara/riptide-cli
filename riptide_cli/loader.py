@@ -66,6 +66,7 @@ def load_riptide_core(ctx):
             # Load engine
             try:
                 ctx.engine = load_engine(ctx.system_config["engine"])
+                ctx.system_config.load_performance_options(ctx.engine)
             except NotImplementedError as ex:
                 raise RiptideCliError('Unknown engine specified in configuration.', ctx) from ex
             except ConnectionError as ex:

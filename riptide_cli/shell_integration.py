@@ -53,6 +53,7 @@ def run_cmd(command_name, arguments):
     """Directly run a command in the project found the user is currently in."""
     system_config = load_config()
     engine = load_engine(system_config["engine"])
+    system_config.load_performance_options(engine)
 
     # check if command is actually an alias
     command_name = system_config["project"]["app"]["commands"][command_name].resolve_alias()["$name"]

@@ -282,20 +282,9 @@ def load(main):
                 engine.exec(project, service, cols=cols, lines=lines, root=root)
             else:
                 if 'RIPTIDE_DONT_SHOW_EXEC_WARNING' not in os.environ:
-                    main_command = command.split(" ")[0]
                     warn(f"""Using exec --command is not recommended. Please consider creating a Command object instead.
-You might be able to create a command object for this command by adding the following to
-the commands in your project:
 
-    {main_command}:
-        image: "{project["app"]["services"][service]["image"]}"
-        command: {main_command}
-    
-After that, run `riptide status` to refresh the shell integration. Then you can directly run the command on your shell:
-
-    {command}
-
-Please also see the documentation for more information. 
+Please see the documentation for more information. 
 To suppress this warning, set the environment variable RIPTIDE_DONT_SHOW_EXEC_WARNING.""")
 
                 engine.exec_custom(project, service, command, cols=cols, lines=lines, root=root)
