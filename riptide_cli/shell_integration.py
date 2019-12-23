@@ -2,6 +2,7 @@ import os
 import stat
 import sys
 
+from riptide.config.command import in_service
 from riptide.config.document.command import KEY_IDENTIFIER_IN_SERVICE_COMMAND
 from riptide.config.document.config import Config
 from riptide.config.files import get_project_meta_folder
@@ -61,12 +62,7 @@ def run_cmd(command_name, arguments):
 
     if KEY_IDENTIFIER_IN_SERVICE_COMMAND in cmd_obj:
         # In Service comamnd
-        sys.exit(engine.cmd_in_service(
-            system_config["project"],
-            command_name,
-            cmd_obj.get_service(system_config["project"]["app"]),
-            arguments
-        ))
+        sys.exit(in_service.run(engine, system_config["project"], command_name, arguments))
     else:
         # Normal comamnd
         sys.exit(engine.cmd(system_config["project"], command_name, arguments))

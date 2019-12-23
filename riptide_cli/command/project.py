@@ -6,6 +6,7 @@ from click import echo, style
 from click.exceptions import Exit
 from typing import Union
 
+from riptide.config.command import in_service
 from riptide.config.document.command import KEY_IDENTIFIER_IN_SERVICE_COMMAND
 from riptide.engine.results import ResultQueue
 from riptide_cli.command.constants import CMD_STATUS, CMD_START, CMD_START_FG, CMD_STOP, CMD_RESTART, CMD_CMD, \
@@ -240,7 +241,7 @@ def load(main):
         try:
             if KEY_IDENTIFIER_IN_SERVICE_COMMAND in cmd_obj:
                 # In Service comamnd
-                sys.exit(engine.cmd_in_service(project, command, cmd_obj.get_service(project["app"]), arguments))
+                sys.exit(in_service.run(engine, project, command, arguments))
             else:
                 # Normal command
                 sys.exit(engine.cmd(project, command, arguments))
