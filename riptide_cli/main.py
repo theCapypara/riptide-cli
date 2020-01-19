@@ -8,6 +8,7 @@ from click import echo
 
 from riptide.config.errors import RiptideDeprecationWarning
 from riptide.config.loader import load_projects
+from riptide.plugin.loader import load_plugins
 from riptide.util import get_riptide_version_raw
 from riptide_cli.click import ClickMainGroup
 
@@ -94,3 +95,5 @@ riptide_cli.command.db.load(cli)
 riptide_cli.command.importt.load(cli)
 riptide_cli.command.project.load(cli)
 riptide_cli.command.projects.load(cli)
+for plugin in load_plugins().values():
+    plugin.after_load_cli(cli)
