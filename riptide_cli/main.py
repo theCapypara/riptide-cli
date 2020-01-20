@@ -60,6 +60,14 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
 
     ctx.riptide_options = {"verbose": verbose}
 
+    # Don't allow running as root.
+    try:
+        if os.getuid() == 0 and 'RIPTIDE_ALLOW_ROOT' not in os.environ:
+            raise RiptideCliError("riptide must not be run as the root user.", ctx=ctx)
+    except AttributeError:
+        # Windows. Ignore.
+        pass
+
     if project and project_file:
         raise RiptideCliError("--project and --project-file can not be used together.", ctx)
 
