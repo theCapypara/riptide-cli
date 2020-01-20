@@ -20,8 +20,9 @@ warnings.simplefilter('always', RiptideDeprecationWarning)
 
 
 def print_version():
-    echo(f"riptide_lib: {get_riptide_version_raw()}")
-    echo(f"riptide_cli: {pkg_resources.get_distribution('riptide_cli').version}")
+    for pkg in pkg_resources.working_set:
+        if pkg.key.startswith('riptide-'):
+            print(f"{pkg.key:>30}: {pkg.version}")
 
 
 @click.group(
