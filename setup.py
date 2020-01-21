@@ -9,7 +9,7 @@ with open(path.join(this_directory, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='riptide-cli',
-    version='0.5.0',
+    version='0.5.0rc1',
     packages=find_packages(),
     package_data={'riptide_cli': ['shell/*']},
     description='Tool to manage development environments for web applications using containers - CLI-Application',
