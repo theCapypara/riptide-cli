@@ -19,10 +19,10 @@ setup(
     author='Marco "Parakoopa" Köpcke',
     license='MIT',
     install_requires=[
-        'riptide-lib >= 0.5, < 0.6',
+        'riptide-lib >= 0.5rc1, < 0.6',
         'Click >= 7.0',
         'colorama >= 0.4',
-        'click-help-colors >= 0.5',
+        'click-help-colors >= 0.5rc1',
         'tqdm >= 4.38',
     ],
     classifiers=[
