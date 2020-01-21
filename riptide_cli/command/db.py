@@ -38,7 +38,7 @@ def load(main):
         dbenv = DbEnvironments(project, engine)
         db_driver = db_driver_for_service.get(dbenv.db_service)
 
-        running = engine.service_status(project, dbenv.db_service["$name"], ctx.system_config)
+        running = engine.service_status(project, dbenv.db_service["$name"])
 
         if running:
             echo(f"{'Status':<20}: " + style("Running", bold=True, fg="green"))
@@ -215,7 +215,7 @@ def load(main):
         db_driver = db_driver_for_service.get(dbenv.db_service)
 
         # 1. If not running, start database
-        was_running = engine.status(project, ctx.system_config)[db_name]
+        was_running = engine.status(project)[db_name]
         if not was_running:
             await start_project(ctx, [db_name], show_status=False)
 
@@ -239,7 +239,7 @@ async def switch_impl(ctx, name):
     db_name = dbenv.db_service["$name"]
 
     # 1. If running, stop database
-    was_running = engine.status(project, ctx.system_config)[db_name]
+    was_running = engine.status(project)[db_name]
     if was_running:
         await stop_project(ctx, [db_name], show_status=False)
 
@@ -274,7 +274,7 @@ async def importt_impl(ctx, file):
         raise RiptideCliError("The path does not exist.", ctx)
 
     # 1. If not running, start database
-    was_running = engine.status(project, ctx.system_config)[db_name]
+    was_running = engine.status(project)[db_name]
     if not was_running:
         await start_project(ctx, [db_name], show_status=False)
         # TODO: Some databases need a while. How to do this better? mysqladmin for example doesn't help :(

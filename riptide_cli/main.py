@@ -8,6 +8,7 @@ from click import echo
 
 from riptide.config.errors import RiptideDeprecationWarning
 from riptide.config.loader import load_projects
+from riptide.plugin.loader import load_plugins
 from riptide.util import get_riptide_version_raw
 from riptide_cli.click import ClickMainGroup
 
@@ -19,8 +20,9 @@ warnings.simplefilter('always', RiptideDeprecationWarning)
 
 
 def print_version():
-    echo(f"riptide_lib: {get_riptide_version_raw()}")
-    echo(f"riptide_cli: {pkg_resources.get_distribution('riptide_cli').version}")
+    for pkg in pkg_resources.working_set:
+        if pkg.key.startswith('riptide-'):
+            print(f"{pkg.key:>30}: {pkg.version}")
 
 
 @click.group(
@@ -58,6 +60,14 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
 
     ctx.riptide_options = {"verbose": verbose}
 
+    # Don't allow running as root.
+    try:
+        if os.getuid() == 0 and 'RIPTIDE_ALLOW_ROOT' not in os.environ:
+            raise RiptideCliError("riptide must not be run as the root user.", ctx=ctx)
+    except AttributeError:
+        # Windows. Ignore.
+        pass
+
     if project and project_file:
         raise RiptideCliError("--project and --project-file can not be used together.", ctx)
 
@@ -94,3 +104,5 @@ riptide_cli.command.db.load(cli)
 riptide_cli.command.importt.load(cli)
 riptide_cli.command.project.load(cli)
 riptide_cli.command.projects.load(cli)
+for plugin in load_plugins().values():
+    plugin.after_load_cli(cli)

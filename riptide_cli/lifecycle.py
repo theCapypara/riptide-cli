@@ -81,10 +81,11 @@ def display_errors(errors):
             echo()
 
 
-async def start_project(ctx, services: Union[List[str], None], show_status=True):
+async def start_project(ctx, services: Union[List[str], None], show_status=True, quick=False):
     """
     Starts a project by starting all it's services (or a subset).
     If show_status is true, shows status after that.
+    If quick is True, pre_start and post_start commands are skipped.
     """
     project = ctx.system_config["project"]
     engine = ctx.engine
@@ -102,7 +103,7 @@ async def start_project(ctx, services: Union[List[str], None], show_status=True)
     ctx.start_stop_errors = []
 
     try:
-        async for service_name, status, finished in engine.start_project(project, services):
+        async for service_name, status, finished in engine.start_project(project, services, quick=quick):
             _handle_progress_bar(service_name, status, finished, ctx.progress_bars, ctx.start_stop_errors)
     except Exception as err:
         raise RiptideCliError("Error starting the services", ctx) from err
