@@ -9,7 +9,7 @@ with open(path.join(this_directory, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='riptide-cli',
-    version='0.5.0rc1',
+    version='0.5.0',
     packages=find_packages(),
     package_data={'riptide_cli': ['shell/*']},
     description='Tool to manage development environments for web applications using containers - CLI-Application',
@@ -19,10 +19,10 @@ setup(
     author='Marco "Parakoopa" Köpcke',
     license='MIT',
     install_requires=[
-        'riptide-lib >= 0.5rc1, < 0.6',
+        'riptide-lib >= 0.5, < 0.6',
         'Click >= 7.0',
         'colorama >= 0.4',
-        'click-help-colors >= 0.5rc1',
+        'click-help-colors >= 0.5',
         'tqdm >= 4.38',
     ],
     classifiers=[
