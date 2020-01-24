@@ -245,7 +245,7 @@ def load(main):
             else:
                 # Normal command
                 sys.exit(engine.cmd(project, command, arguments))
-        except ExecError as err:
+        except (ExecError, ValueError) as err:
             raise RiptideCliError(str(err), ctx) from err
 
     @cli_section("CLI")
