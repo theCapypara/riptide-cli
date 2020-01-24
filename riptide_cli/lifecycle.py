@@ -81,7 +81,7 @@ def display_errors(errors):
             echo()
 
 
-async def start_project(ctx, services: Union[List[str], None], show_status=True, quick=False):
+async def start_project(ctx, services: List[str], show_status=True, quick=False):
     """
     Starts a project by starting all it's services (or a subset).
     If show_status is true, shows status after that.
@@ -89,9 +89,6 @@ async def start_project(ctx, services: Union[List[str], None], show_status=True,
     """
     project = ctx.system_config["project"]
     engine = ctx.engine
-
-    if services is None:
-        services = project["app"]["services"].keys()
 
     if len(services) < 1:
         return
@@ -118,16 +115,13 @@ async def start_project(ctx, services: Union[List[str], None], show_status=True,
         status_project(ctx)
 
 
-async def stop_project(ctx, services: Union[List[str], None], show_status=True):
+async def stop_project(ctx, services: List[str], show_status=True):
     """
     Stops a project by stopping all it's services (or a subset).
     If show_status is true, shows status after that.
     """
     project = ctx.system_config["project"]
     engine = ctx.engine
-
-    if services is None:
-        services = project["app"]["services"].keys()
 
     if len(services) < 1:
         return

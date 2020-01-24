@@ -63,27 +63,54 @@ def load(main):
     @cli_section("Service")
     @main.command(CMD_START)
     @click.pass_context
+    @click.option('--default', '-d', required=False, is_flag=True, help='Start all default services.')
+    @click.option('--all', '-a', required=False, is_flag=True, help='Start all services.')
     @click.option('--services', '-s', required=False, help='Names of services to start, comma-separated (default: all)')
     @async_command(interrupt_handler=interrupt_handler)
-    async def start(ctx, services):
-        """ Starts services. """
+    async def start(ctx, default, all, services):
+        """
+        Starts services.
+
+        By default (or if --default/-d is explicitly set) services defined in `default_services` of the project
+        will be started. If none are defined, all services are started.
+
+        If the --all/-a flag is passed, all services are started.
+
+        If --service/-s is passed, a comma-separated list of services is started.
+
+        --default, --service and --all can not be used together.
+        """
         load_riptide_core(ctx)
         cmd_constraint_project_set_up(ctx)
 
-        if services is not None:
-            services = services.split(",")
-        await start_project(ctx, services)
+        if sum([bool(v) for v in [default, all, services]]) > 1:
+            raise RiptideCliError("--all, --service and --default can not be used together", ctx)
+        project = ctx.system_config["project"]
+
+        # Default:
+        services_to_start = None
+        if "default_services" in project:
+            services_to_start = project["default_services"]
+
+        if all or services_to_start is None:
+            services_to_start = project["app"]["services"].keys()
+        elif services is not None:
+            services_to_start = list(project["app"]["services"].keys())
+
+        await start_project(ctx, services_to_start)
 
     @cli_section("Service")
     @main.command(CMD_START_FG, context_settings={
         'ignore_unknown_options': True  # Make all unknown options redirect to arguments
     })
     @click.pass_context
-    @click.option('--services', '-s', required=False, help='Names of services to start, comma-separated (default: all)')
+    @click.option('--default', '-d', required=False, is_flag=True, help='Start all default services.')
+    @click.option('--all', '-a', required=False, is_flag=True, help='Start all services.')
+    @click.option('--services', '-s', required=False, help='Names of services to start, comma-separated.')
     @click.argument('interactive_service', required=True)
     @click.argument('arguments', required=False, nargs=-1, type=click.UNPROCESSED)
     @async_command(interrupt_handler=interrupt_handler)
-    async def start_fg(ctx, services, interactive_service, arguments):
+    async def start_fg(ctx, default, all, services, interactive_service, arguments):
         """
         Starts services and then runs a service in foreground.
 
@@ -112,6 +139,8 @@ def load(main):
 
         - working_directory (is set to current working directory)
 
+        For --service/--all/--default flags and default behaviour, see the start command.
+
         """
         load_riptide_core(ctx)
         cmd_constraint_project_set_up(ctx)
@@ -119,15 +148,23 @@ def load(main):
         project = ctx.system_config["project"]
         engine = ctx.engine
 
+        if sum([bool(v) for v in [default, all, services]]) > 1:
+            raise RiptideCliError("--all, --service and --default can not be used together", ctx)
+
         if "services" not in project["app"] or interactive_service not in project["app"]["services"]:
             raise RiptideCliError(f"The service {interactive_service} was not found.", ctx=ctx)
 
-        if services is not None:
-            normal_services = services.split(",")
-        elif "services" in project["app"]:
+        project = ctx.system_config["project"]
+
+        # Default:
+        normal_services = None
+        if "default_services" in project:
+            normal_services = project["default_services"]
+
+        if all or normal_services is None:
             normal_services = list(project["app"]["services"].keys())
-        else:
-            normal_services = []
+        elif services is not None:
+            normal_services = services.split(",")
 
         # Remove interactive service from normal service list
         if interactive_service in normal_services:
@@ -145,31 +182,88 @@ def load(main):
     @cli_section("Service")
     @main.command(CMD_STOP)
     @click.pass_context
-    @click.option('--services', '-s', required=False, help='Names of services to stop, comma-separated (default: all)')
+    @click.option('--default', '-d', required=False, is_flag=True, help='Stop all default services.')
+    @click.option('--all', '-a', required=False, is_flag=True, help='Stop all services.')
+    @click.option('--services', '-s', required=False, help='Names of services to stop, comma-separated.')
     @async_command(interrupt_handler=interrupt_handler)
-    async def stop(ctx, services):
-        """ Stops services. """
+    async def stop(ctx, default, all, services):
+        """
+        Stops services.
+
+        By default (or if the --all/-a option is explicitly set) all running services are stopped.
+
+        If the --default/-d flag is set, only services defined in the `default_services` of the project are stopped.
+        If this field is not set, all services are stopped.
+
+        If --service/-s is passed, a comma-separated list of services is stopped.
+
+        --default, --service and --all can not be used together.
+        """
         load_riptide_core(ctx)
         cmd_constraint_project_set_up(ctx)
 
-        if services is not None:
-            services = services.split(",")
-        await stop_project(ctx, services)
+        if sum([bool(v) for v in [default, all, services]]) > 1:
+            raise RiptideCliError("--all, --service and --default can not be used together", ctx)
+
+        project = ctx.system_config["project"]
+
+        # Default: All
+        services_to_stop = list(project["app"]["services"].keys())
+        if default and "default_services" in project:
+            services_to_stop = project["default_services"]
+        elif services is not None:
+            services_to_stop = services.split(",")
+
+        await stop_project(ctx, services_to_stop)
 
     @cli_section("Service")
     @main.command(CMD_RESTART)
     @click.pass_context
-    @click.option('--services', '-s', required=False, help='Names of services to restart, comma-separated (default: all)')
+    @click.option('--default', '-d', required=False, is_flag=True, help='Restart all default services.')
+    @click.option('--all', '-a', required=False, is_flag=True, help='Restart all services.')
+    @click.option('--services', '-s', required=False, help='Names of services to restart, comma-separated.')
     @async_command(interrupt_handler=interrupt_handler)
-    async def restart(ctx, services):
-        """ Stops and then starts services. """
+    async def restart(ctx, default, all, services):
+        """
+        Stops and then starts services.
+
+        By default all running services are restarted.
+
+        If the --all/-a flag is set, all services are restarted, even if they were not running.
+
+        If the --default/-d flag is set, only services defined in the `default_services` of the project are restarted,
+        including services that were not running. If this field is not set, all services are restarted.
+
+        If --service/-s is passed, a comma-separated list of services is restarted.
+
+        --default, --service and --all can not be used together.
+
+        """
         load_riptide_core(ctx)
         cmd_constraint_project_set_up(ctx)
 
-        if services is not None:
-            services = services.split(",")
-        await stop_project(ctx, services, show_status=False)
-        await start_project(ctx, services)
+        if sum([bool(v) for v in [default, all, services]]) > 1:
+            raise RiptideCliError("--all, --service and --default can not be used together", ctx)
+
+        project = ctx.system_config["project"]
+
+        # Get running services:
+        running_services = [k for (k, v) in ctx.engine.status(project).items() if v]
+        # Default (running services):
+        services_to_restart = running_services
+        if default and "default_services" in project:
+            services_to_restart = project["default_services"]
+        elif all or (default and "default_services" not in project):
+            services_to_restart = project["app"]["services"].keys()
+        elif services is not None:
+            services_to_restart = services.split(",")
+
+        if len(services_to_restart) < 1:
+            raise RiptideCliError("No services were running. "
+                                  "If you want to restart all, set the flag -a. See help page.", ctx)
+
+        await stop_project(ctx, services_to_restart, show_status=False)
+        await start_project(ctx, services_to_restart)
 
     @cli_section("Project")
     @main.command(CMD_NOTES)
