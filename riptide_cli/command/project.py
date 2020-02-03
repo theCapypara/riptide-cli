@@ -95,7 +95,7 @@ def load(main):
         if all or services_to_start is None:
             services_to_start = project["app"]["services"].keys()
         elif services is not None:
-            services_to_start = list(project["app"]["services"].keys())
+            services_to_start = services.split(",")
 
         await start_project(ctx, services_to_start)
 
