@@ -92,10 +92,10 @@ def load(main):
         if "default_services" in project:
             services_to_start = project["default_services"]
 
-        if all or services_to_start is None:
-            services_to_start = project["app"]["services"].keys()
-        elif services is not None:
+        if services is not None:
             services_to_start = services.split(",")
+        elif all or services_to_start is None:
+            services_to_start = project["app"]["services"].keys()
 
         await start_project(ctx, services_to_start)
 
