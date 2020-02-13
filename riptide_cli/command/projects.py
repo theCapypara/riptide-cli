@@ -17,7 +17,7 @@ def load(main):
         This includes all projects that were ever loaded with Riptide.
         """
         click.echo(click.style("Projects:", bold=True))
-        projects = load_projects()
+        projects = load_projects(True)
         for name, path in projects.items():
             click.echo(TAB + "- " + click.style(name, bold=True) + ": " + path)
 
@@ -25,7 +25,7 @@ def load(main):
     @main.command(CMD_PROJECT_REMOVE)
     @click.argument('project', required=True)
     @click.pass_context
-    def list(ctx, project):
+    def remove(ctx, project):
         """
         Remove a project by name.
 
