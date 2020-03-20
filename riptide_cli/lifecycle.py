@@ -1,15 +1,12 @@
-from collections import OrderedDict
-
 import os
-from typing import Union, List
+from collections import OrderedDict
+from typing import List
 
-import traceback
 from click import echo, style
 from tqdm import tqdm
 
-from riptide.engine.results import ResultQueue
-from riptide_cli.helpers import RiptideCliError, TAB, get_is_verbose
 from riptide.engine.status import status_for
+from riptide_cli.helpers import RiptideCliError, TAB, get_is_verbose
 
 
 def text_width_right():
@@ -53,7 +50,14 @@ def _handle_progress_bar(service_name, status, finished, progress_bars, errors):
         if status:
             # error
             tw = text_width_error()
-            errors.append({"service": service_name, "error": status})
+            traceback_string = 'Unknown error.'
+            if hasattr(status, 'traceback_string'):
+                traceback_string = status.traceback_string
+            errors.append({
+                "service": service_name,
+                "error": status,
+                "error_traceback": traceback_string
+            })
             msg = (status.message[:tw-3] + '...') if len(status.message) > tw-3 else status.message.ljust(tw)
             progress_bars[service_name].bar_format = "{desc}" + msg
             progress_bars[service_name].refresh()
@@ -71,14 +75,15 @@ def _handle_progress_bar(service_name, status, finished, progress_bars, errors):
         progress_bars[service_name].refresh()
 
 
-def display_errors(errors):
+def display_errors(errors, ctx):
     """Displays errors during start/stop (if any)."""
     if len(errors) > 0:
-        echo(style("There were errors while starting some of the services: ", fg='red', bold=True))
+        echo(style("There were errors while starting some of the services (use -v to show tracebacks): ", fg='red', bold=True))
         for error in errors:
             echo(TAB + style(error["service"] + ":", bold=True, fg='red'))
             echo(TAB + style(str(error["error"]), bg='red'))
-            echo()
+            if get_is_verbose(ctx):
+                echo(style(str(error["error_traceback"]), bg='red'))
 
 
 async def start_project(ctx, services: List[str], show_status=True, quick=False):
@@ -109,7 +114,7 @@ async def start_project(ctx, services: List[str], show_status=True, quick=False)
         bar.close()
         echo()
 
-    display_errors(ctx.start_stop_errors)
+    display_errors(ctx.start_stop_errors, ctx)
 
     if show_status:
         status_project(ctx)
@@ -142,7 +147,7 @@ async def stop_project(ctx, services: List[str], show_status=True):
         bar.close()
         echo()
 
-    display_errors(ctx.start_stop_errors)
+    display_errors(ctx.start_stop_errors, ctx)
 
     if show_status:
         status_project(ctx)

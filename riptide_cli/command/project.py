@@ -26,7 +26,7 @@ def interrupt_handler(ctx, ex: Union[KeyboardInterrupt, SystemExit]):
             progress_bar.close()
             echo()
     if hasattr(ctx, "start_stop_errors"):
-        display_errors(ctx.start_stop_errors)
+        display_errors(ctx.start_stop_errors, ctx)
     echo(style('Riptide process was interrupted. '
                'Services might be in an invalid state. You may want to run riptide stop.', bg='red', fg='white'))
     echo("Finishing up... Stand by!")
