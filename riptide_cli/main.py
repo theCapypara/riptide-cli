@@ -9,7 +9,7 @@ from click import echo
 from riptide.config.errors import RiptideDeprecationWarning
 from riptide.config.loader import load_projects
 from riptide.plugin.loader import load_plugins
-from riptide.util import get_riptide_version_raw
+from riptide.util import get_riptide_version_raw, SystemFlag
 from riptide_cli.click import ClickMainGroup
 
 from riptide_cli.helpers import RiptideCliError, warn
@@ -52,6 +52,7 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
     Define development environments for web applications.
     See full documentation at: https://riptide-docs.readthedocs.io/en/latest/
     """
+    SystemFlag.IS_CLI = True
 
     # Print version if requested
     if version:
