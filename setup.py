@@ -1,4 +1,4 @@
-__version__ = '0.5.2'
+__version__ = '0.6.0'
 from setuptools import setup, find_packages
 
 # README read-in
@@ -20,7 +20,7 @@ setup(
     author='Marco "Parakoopa" Köpcke',
     license='MIT',
     install_requires=[
-        'riptide-lib >= 0.5, < 0.6',
+        'riptide-lib >= 0.6, < 0.7',
         'Click >= 7.0',
         'colorama >= 0.4',
         'click-help-colors >= 0.5',
