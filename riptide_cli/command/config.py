@@ -33,7 +33,7 @@ def load(main):
         final_dict = ctx.system_config.to_dict()
         if not system:
             final_dict = _filter_config_dict_recursive_key(final_dict)
-        echo(yaml.dump(final_dict, default_flow_style=False, sort_keys=False))
+        echo(yaml.dump(final_dict, default_flow_style=False, sort_keys=True))
 
     @cli_section("Configuration")
     @main.command(CMD_CONFIG_EDIT_USER)
