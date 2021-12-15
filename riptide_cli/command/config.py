@@ -30,7 +30,7 @@ def load(main):
         echo()
         echo("# This is the final configuration that was created by merging all configuration files together")
         echo("# and resolving all variables.")
-        final_dict = {"riptide": ctx.system_config.items()}
+        final_dict = ctx.system_config.to_dict()
         if not system:
             final_dict = _filter_config_dict_recursive_key(final_dict)
         echo(yaml.dump(final_dict, default_flow_style=False, sort_keys=True))
