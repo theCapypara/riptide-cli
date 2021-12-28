@@ -16,8 +16,8 @@ setup(
     description='Tool to manage development environments for web applications using containers - CLI-Application',
     long_description=long_description,
     long_description_content_type='text/x-rst',
-    url='https://github.com/Parakoopa/riptide-cli/',
-    author='Marco "Parakoopa" Köpcke',
+    url='https://github.com/theCapypara/riptide-cli/',
+    author='Marco "theCapypara" Köpcke',
     license='MIT',
     install_requires=[
         'riptide-lib >= 0.7, < 0.8',
@@ -25,6 +25,7 @@ setup(
         'colorama >= 0.4',
         'click-help-colors >= 0.5',
         'tqdm >= 4.38',
+        'packaging'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',

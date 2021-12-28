@@ -52,8 +52,8 @@ class RiptideCliError(ClickException):
         return error_string
 
 
-def warn(msg):
-    echo(style('Warning: ', fg='yellow', bold=True) + style(msg, fg='yellow'))
+def warn(msg, with_prefix=True):
+    echo((style('Warning: ', fg='yellow', bold=True) if with_prefix else "") + style(msg, fg='yellow'))
 
 
 def cli_section(section):

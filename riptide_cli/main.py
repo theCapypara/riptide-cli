@@ -14,6 +14,7 @@ from riptide_cli.click import ClickMainGroup
 
 from riptide_cli.helpers import RiptideCliError, warn
 import riptide_cli.command
+from riptide_cli.update_checker import check_for_update
 
 warnings.simplefilter('ignore', DeprecationWarning)
 warnings.simplefilter('always', RiptideDeprecationWarning)
@@ -74,6 +75,14 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
 
     if update:
         raise RiptideCliError("--update/-u is deprecated. Please run 'riptide update' instead.", ctx)
+
+    new_versions = check_for_update()
+    if new_versions:
+        new_versions = '\n'.join([f"    {pkg:<22}: {version}" for pkg, version in new_versions.items()])
+        warn(f"A new Riptide version is available:\n"
+             f"{new_versions}\n\n"
+             f"Use riptide_proxy to upgrade. You may NEED to use sudo, see:\n"
+             f"    https://riptide-docs.readthedocs.io/en/latest/user_docs/2a_linux.html#updating-riptide\n", False)
 
     if 'RIPTIDE_SHELL_LOADED' not in os.environ and not ctx.resilient_parsing and not ignore_shell:
         warn("Riptide shell integration not enabled.")
