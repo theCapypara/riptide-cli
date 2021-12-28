@@ -66,8 +66,10 @@ def load(main):
     @click.option('--default', '-d', required=False, is_flag=True, help='Start all default services.')
     @click.option('--all', '-a', required=False, is_flag=True, help='Start all services.')
     @click.option('--services', '-s', required=False, help='Names of services to start, comma-separated (default: all)')
+    @click.option('--cmd', '-c', required=False, show_default=True, default="default",
+                  help='Command group to use for started services.')
     @async_command(interrupt_handler=interrupt_handler)
-    async def start(ctx, default, all, services):
+    async def start(ctx, default, all, services, cmd):
         """
         Starts services.
 
@@ -97,7 +99,7 @@ def load(main):
         elif all or services_to_start is None:
             services_to_start = project["app"]["services"].keys()
 
-        await start_project(ctx, services_to_start)
+        await start_project(ctx, services_to_start, command_group=cmd)
 
     @cli_section("Service")
     @main.command(CMD_START_FG, context_settings={
@@ -107,10 +109,12 @@ def load(main):
     @click.option('--default', '-d', required=False, is_flag=True, help='Start all default services.')
     @click.option('--all', '-a', required=False, is_flag=True, help='Start all services.')
     @click.option('--services', '-s', required=False, help='Names of services to start, comma-separated.')
+    @click.option('--cmd', '-c', required=False, show_default=True, default="default",
+                  help='Command group to use for started services.')
     @click.argument('interactive_service', required=True)
     @click.argument('arguments', required=False, nargs=-1, type=click.UNPROCESSED)
     @async_command(interrupt_handler=interrupt_handler)
-    async def start_fg(ctx, default, all, services, interactive_service, arguments):
+    async def start_fg(ctx, default, all, services, command_group, interactive_service, arguments, cmd):
         """
         Starts services and then runs a service in foreground.
 
@@ -171,13 +175,13 @@ def load(main):
             normal_services.remove(interactive_service)
 
         echo(style("(1/3) Starting other services...", bg='cyan', fg='white'))
-        await start_project(ctx, normal_services, show_status=False)
+        await start_project(ctx, normal_services, show_status=False, command_group=cmd)
 
         echo(style(f"(2/3) Stopping {interactive_service}...", bg='cyan', fg='white'))
         await stop_project(ctx, [interactive_service], show_status=False)
 
         echo(style(f"(3/3) Starting in {interactive_service} foreground mode...", bg='cyan', fg='white'))
-        engine.service_fg(project, interactive_service, arguments)
+        engine.service_fg(project, interactive_service, arguments, cmd)
 
     @cli_section("Service")
     @main.command(CMD_STOP)
@@ -222,8 +226,10 @@ def load(main):
     @click.option('--default', '-d', required=False, is_flag=True, help='Restart all default services.')
     @click.option('--all', '-a', required=False, is_flag=True, help='Restart all services.')
     @click.option('--services', '-s', required=False, help='Names of services to restart, comma-separated.')
+    @click.option('--cmd', '-c', required=False, show_default=True, default="default",
+                  help='Command group to use for started services.')
     @async_command(interrupt_handler=interrupt_handler)
-    async def restart(ctx, default, all, services):
+    async def restart(ctx, default, all, services, cmd):
         """
         Stops and then starts services.
 
@@ -263,7 +269,7 @@ def load(main):
                                   "If you want to restart all, set the flag -a. See help page.", ctx)
 
         await stop_project(ctx, services_to_restart, show_status=False)
-        await start_project(ctx, services_to_restart)
+        await start_project(ctx, services_to_restart, command_group=cmd)
 
     @cli_section("Project")
     @main.command(CMD_NOTES)

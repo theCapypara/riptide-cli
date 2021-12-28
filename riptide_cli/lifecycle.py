@@ -86,7 +86,7 @@ def display_errors(errors, ctx):
                 echo(style(str(error["error_traceback"]), bg='red'))
 
 
-async def start_project(ctx, services: List[str], show_status=True, quick=False):
+async def start_project(ctx, services: List[str], show_status=True, quick=False, *, command_group: str = "default"):
     """
     Starts a project by starting all it's services (or a subset).
     If show_status is true, shows status after that.
@@ -105,7 +105,7 @@ async def start_project(ctx, services: List[str], show_status=True, quick=False)
     ctx.start_stop_errors = []
 
     try:
-        async for service_name, status, finished in engine.start_project(project, services, quick=quick):
+        async for service_name, status, finished in engine.start_project(project, services, quick=quick, command_group=command_group):
             _handle_progress_bar(service_name, status, finished, ctx.progress_bars, ctx.start_stop_errors)
     except Exception as err:
         raise RiptideCliError("Error starting the services", ctx) from err
