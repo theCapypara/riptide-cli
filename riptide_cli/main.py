@@ -81,7 +81,7 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
         new_versions = '\n'.join([f"    {pkg:<22}: {version}" for pkg, version in new_versions.items()])
         warn(f"A new Riptide version is available:\n"
              f"{new_versions}\n\n"
-             f"Use riptide_proxy to upgrade. You may NEED to use sudo, see:\n"
+             f"Use riptide_upgrade to upgrade. You may NEED to use sudo, see:\n"
              f"    https://riptide-docs.readthedocs.io/en/latest/user_docs/2a_linux.html#updating-riptide\n", False)
 
     if 'RIPTIDE_SHELL_LOADED' not in os.environ and not ctx.resilient_parsing and not ignore_shell:
