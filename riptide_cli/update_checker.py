@@ -20,7 +20,14 @@ def check_for_update() -> Optional[Dict[str, str]]:
         with open(cache_path, 'r') as f:
             doc = json.load(f)
         if doc["time"] + 604_800 > time.time():  # 7 days
-            return doc["versions"]
+            cache_is_valid = True
+            for pkg_name, cached_ver in doc["versions"].items():
+                dist = pkg_resources.get_distribution(pkg_name)
+                if dist.version == cached_ver:
+                    cache_is_valid = False
+                    break
+            if cache_is_valid:
+                return doc["versions"]
         pass
     except Exception:
         pass
