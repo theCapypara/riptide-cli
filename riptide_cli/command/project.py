@@ -114,7 +114,7 @@ def load(main):
     @click.argument('interactive_service', required=True)
     @click.argument('arguments', required=False, nargs=-1, type=click.UNPROCESSED)
     @async_command(interrupt_handler=interrupt_handler)
-    async def start_fg(ctx, default, all, services, command_group, interactive_service, arguments, cmd):
+    async def start_fg(ctx, default, all, services, interactive_service, arguments, cmd):
         """
         Starts services and then runs a service in foreground.
 
