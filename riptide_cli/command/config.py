@@ -1,3 +1,5 @@
+import sys
+
 import click
 import os.path
 import yaml
@@ -5,11 +7,13 @@ from click import echo, style
 from shutil import copyfile
 
 from riptide.config import repositories
-from riptide_cli.command.constants import CMD_CONFIG_DUMP, CMD_CONFIG_EDIT_USER, CMD_CONFIG_EDIT_PROJECT, CMD_UPDATE
-from riptide_cli.helpers import cli_section, header, RiptideCliError, TAB
+from riptide_cli.command.constants import CMD_CONFIG_DUMP, CMD_CONFIG_GET, CMD_CONFIG_EDIT_USER, CMD_CONFIG_EDIT_PROJECT, CMD_UPDATE
+from riptide_cli.helpers import cli_section, header, RiptideCliError, TAB, get_is_verbose
 from riptide.config.files import riptide_assets_dir, riptide_main_config_file, riptide_config_dir, RIPTIDE_PROJECT_CONFIG_NAME
 from riptide_cli.loader import load_riptide_system_config, load_riptide_core
 
+from functools import partial
+from riptide.config.service.config_files_helper_functions import read_file
 
 def load(main):
     """Adds all base commands to the CLI"""
@@ -34,6 +38,26 @@ def load(main):
         if not system:
             final_dict = _filter_config_dict_recursive_key(final_dict)
         echo(yaml.dump(final_dict, default_flow_style=False, sort_keys=True))
+
+    @cli_section("Configuration")
+    @main.command(CMD_CONFIG_GET)
+    @click.pass_context
+    @click.argument('template')
+    def config_get(ctx, template):
+        """ Obtain configuration from riptide using a template. Supports helper functions e.g. riptide config-get -v "project.app.get_service_by_role('the_role').domain()" """
+        load_riptide_core(ctx)
+        try:
+            echo(ctx.system_config.process_vars_for(
+                "{{ " + template + " }}",
+                additional_helpers = []
+            ))
+        except Exception as error:
+            if get_is_verbose(ctx):
+                echo(style(str(error), bg='red'))
+            echo(str(None))
+            pass
+
+
 
     @cli_section("Configuration")
     @main.command(CMD_CONFIG_EDIT_USER)

@@ -1,4 +1,5 @@
 CMD_CONFIG_DUMP = 'config-dump'
+CMD_CONFIG_GET = 'config-get'
 CMD_CONFIG_EDIT_USER = 'config-edit-user'
 CMD_CONFIG_EDIT_PROJECT = 'config-edit-project'
 CMD_UPDATE = 'update'
