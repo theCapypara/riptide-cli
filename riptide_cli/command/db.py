@@ -1,6 +1,7 @@
 import os
 
 import click
+import json
 from asyncio import sleep
 from click import style, echo
 
@@ -55,7 +56,11 @@ def load(main):
     @cli_section("Database")
     @main.command(CMD_DB_LIST)
     @click.pass_context
-    def lst(ctx):
+    @click.option('--machine-readable', is_flag=True, default=False,
+                  help='Print machine readable output (JSON)')
+    @click.option('--current', is_flag=True, default=False,
+                  help='Print current used env')
+    def lst(ctx, machine_readable, current):
         """ Lists database environments """
         load_riptide_core(ctx)
         cmd_constraint_has_db(ctx)
@@ -64,18 +69,26 @@ def load(main):
         engine = ctx.engine
         dbenv = DbEnvironments(project, engine)
 
-        current = dbenv.currently_selected_name()
+        cur = dbenv.currently_selected_name()
 
-        echo("Database environments: ")
+        if not machine_readable and not current:
+            echo("Database environments: ")
 
-        for env in dbenv.list():
-            if env == current:
-                echo(TAB + "- " + style(env, bold=True) + " [Current]")
-            else:
-                echo(TAB + "- " + env)
+            for env in dbenv.list():
+                if env == cur:
+                    echo(TAB + "- " + style(env, bold=True) + " [Current]")
+                else:
+                    echo(TAB + "- " + env)
 
-        echo()
-        echo("Use db-switch to switch environments.")
+            echo()
+            echo("Use db-switch to switch environments.")
+        elif not current:
+            echo(json.dumps({
+                "envs": dbenv.list(),
+                "current": cur
+            }))
+        else:
+            echo(cur)
 
     @cli_section("Database")
     @main.command(CMD_DB_SWITCH)
