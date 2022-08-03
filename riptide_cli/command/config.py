@@ -8,7 +8,7 @@ from shutil import copyfile
 
 from riptide.config import repositories
 from riptide_cli.command.constants import CMD_CONFIG_DUMP, CMD_CONFIG_GET, CMD_CONFIG_EDIT_USER, CMD_CONFIG_EDIT_PROJECT, CMD_UPDATE
-from riptide_cli.helpers import cli_section, header, RiptideCliError, TAB, get_is_verbose
+from riptide_cli.helpers import cli_section, header, RiptideCliError, TAB
 from riptide.config.files import riptide_assets_dir, riptide_main_config_file, riptide_config_dir, RIPTIDE_PROJECT_CONFIG_NAME
 from riptide_cli.loader import load_riptide_system_config, load_riptide_core
 
