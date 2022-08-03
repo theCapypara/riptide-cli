@@ -44,20 +44,18 @@ def load(main):
     @click.pass_context
     @click.argument('template')
     def config_get(ctx, template):
-        """ Obtain configuration from riptide using a template. Supports helper functions e.g. riptide config-get -v "project.app.get_service_by_role('the_role').domain()" """
+        """
+        Obtain configuration from riptide using a template. Supports helper functions e.g. riptide config-get -v
+        "project.app.get_service_by_role('the_role').domain()"
+        """
         load_riptide_core(ctx)
         try:
             echo(ctx.system_config.process_vars_for(
                 "{{ " + template + " }}",
-                additional_helpers = []
+                additional_helpers=[]
             ))
         except Exception as error:
-            if get_is_verbose(ctx):
-                echo(style(str(error), bg='red'))
-            echo(str(None))
-            pass
-
-
+            raise RiptideCliError('Error processing the variable.', ctx) from error
 
     @cli_section("Configuration")
     @main.command(CMD_CONFIG_EDIT_USER)
