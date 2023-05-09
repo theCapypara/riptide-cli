@@ -75,8 +75,6 @@ def async_command(interrupt_handler=lambda _, __: True):
     SOURCE:  https://github.com/pallets/click/issues/85
     """
     def decorator(f):
-        f = asyncio.coroutine(f)
-
         def wrapper(ctx, *args, **kwargs):
             loop = asyncio.get_event_loop()
             try:
