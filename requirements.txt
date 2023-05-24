@@ -1,5 +1,5 @@
 Click==7.0
-colorama==0.4.1
+colorama==0.4.6
 click-help-colors==0.6
 tqdm==4.62.3
 riptide-lib >= 0.8.0b1, < 0.9
