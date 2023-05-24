@@ -32,7 +32,7 @@
 
 |build| |docs| |pypi-version| |pypi-downloads| |pypi-license| |pypi-pyversions|
 
-.. |build| image:: https://img.shields.io/github/actions/workflow/status/theCapypara/riptide-cli/build-test-publish.yml
+.. |build| image:: https://img.shields.io/github/actions/workflow/status/theCapypara/riptide-cli/build.yml
     :target: https://github.com/theCapypara/riptide-cli/actions
     :alt: Build Status
 
