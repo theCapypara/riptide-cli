@@ -39,7 +39,7 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        riptide=riptide_cli.main:cli
+        riptide=riptide_cli.__main__:cli
         riptide_upgrade=riptide_cli.self_updater:update
     ''',
     # Scripts for the shell integration, meant to be sourced.

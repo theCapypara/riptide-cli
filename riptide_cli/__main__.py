@@ -27,6 +27,7 @@ def print_version():
 
 
 @click.group(
+    name="riptide",
     cls=ClickMainGroup,
     help_headers_color='yellow',
     help_options_color='cyan',
@@ -116,3 +117,7 @@ riptide_cli.command.project.load(cli)
 riptide_cli.command.projects.load(cli)
 for plugin in load_plugins().values():
     plugin.after_load_cli(cli)
+
+
+if __name__ == "__main__":
+    cli()
