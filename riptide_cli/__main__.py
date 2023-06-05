@@ -10,6 +10,11 @@ if __name__ == '__main__':
     warnings.simplefilter('ignore', DeprecationWarning)
     from riptide.config.errors import RiptideDeprecationWarning
     warnings.simplefilter('always', RiptideDeprecationWarning)
+    try:
+        from cryptography import CryptographyDeprecationWarning
+        warnings.simplefilter('ignore', CryptographyDeprecationWarning)
+    except:
+        pass
 
 
 from riptide.config.loader import load_projects
