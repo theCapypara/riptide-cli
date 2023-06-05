@@ -6,18 +6,20 @@ import warnings
 import click
 from click import echo
 
-from riptide.config.errors import RiptideDeprecationWarning
+if __name__ == '__main__':
+    warnings.simplefilter('ignore', DeprecationWarning)
+    from riptide.config.errors import RiptideDeprecationWarning
+    warnings.simplefilter('always', RiptideDeprecationWarning)
+
+
 from riptide.config.loader import load_projects
 from riptide.plugin.loader import load_plugins
-from riptide.util import get_riptide_version_raw, SystemFlag
+from riptide.util import SystemFlag
 from riptide_cli.click import ClickMainGroup
 
 from riptide_cli.helpers import RiptideCliError, warn
 import riptide_cli.command
 from riptide_cli.update_checker import check_for_update
-
-warnings.simplefilter('ignore', DeprecationWarning)
-warnings.simplefilter('always', RiptideDeprecationWarning)
 
 
 def print_version():
