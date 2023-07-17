@@ -1,4 +1,4 @@
-__version__ = '0.8.0b3'
+__version__ = '0.8.0'
 from setuptools import setup, find_packages
 
 # README read-in
@@ -20,8 +20,8 @@ setup(
     author='Marco "theCapypara" Köpcke',
     license='MIT',
     install_requires=[
-        'riptide-lib >= 0.8.0b1, < 0.9',
-        'Click >= 7.0',
+        'riptide-lib >= 0.8.0, < 0.9',
+        'Click >= 7.0, < 8.0',
         'colorama >= 0.4',
         'click-help-colors >= 0.5',
         'tqdm >= 4.38',
