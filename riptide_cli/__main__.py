@@ -1,6 +1,6 @@
 import os
 
-import pkg_resources
+from importlib.metadata import packages_distributions, version
 import warnings
 
 import click
@@ -28,9 +28,12 @@ from riptide_cli.update_checker import check_for_update
 
 
 def print_version():
-    for pkg in pkg_resources.working_set:
-        if pkg.key.startswith('riptide-'):
-            print(f"{pkg.key:>30}: {pkg.version}")
+    pkgs = packages_distributions()
+    if 'riptide' not in pkgs.keys():
+        print("Couldn't find riptide module in top-level modules:", pkgs.keys())
+        exit(1)
+    for pkg in pkgs['riptide']:
+            print(f"{pkg:>30}: {version(pkg)}")
 
 
 @click.group(
