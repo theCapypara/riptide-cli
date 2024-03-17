@@ -21,7 +21,7 @@ setup(
     license='MIT',
     install_requires=[
         'riptide-lib >= 0.8.0, < 0.9',
-        'Click >= 7.0, < 8.0',
+        'Click >= 7.0, < 9.0',
         'colorama >= 0.4',
         'click-help-colors >= 0.5',
         'tqdm >= 4.38',
