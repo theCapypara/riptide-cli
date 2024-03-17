@@ -5,7 +5,7 @@ import time
 from typing import Optional, Dict
 from urllib import request
 
-from importlib.metadata import distribution, packages_distributions, Distribution
+from importlib.metadata import distributions, distribution, Distribution
 from packaging import version
 
 from riptide.config.files import riptide_config_dir
@@ -33,19 +33,19 @@ def check_for_update() -> Optional[Dict[str, str]]:
         pass
 
     versions = {}
-    for pkg_name in packages_distributions()['riptide']:
-        try:
-            pkg = distribution(pkg_name)
-            repo_url = _get_repo_url_for_egg(pkg)
-            repo_url = repo_url.replace("github.com", "raw.githubusercontent.com")
-            remote_setuppy = request.urlopen(f"{repo_url}release/setup.py").read().decode('utf-8')
-            rematch = REGEX_VERSION.match(remote_setuppy.splitlines()[0])
-            if rematch:
-                upstream_version = version.parse(rematch.group(1))
-                if upstream_version > version.parse(str(pkg.version)):
-                    versions[pkg_name] = str(upstream_version)
-        except Exception:
-            pass
+    for pkg in distributions():
+        if pkg.name.startswith("riptide-"):
+            try:
+                repo_url = _get_repo_url_for_egg(pkg)
+                repo_url = repo_url.replace("github.com", "raw.githubusercontent.com")
+                remote_setuppy = request.urlopen(f"{repo_url}release/setup.py").read().decode('utf-8')
+                rematch = REGEX_VERSION.match(remote_setuppy.splitlines()[0])
+                if rematch:
+                    upstream_version = version.parse(rematch.group(1))
+                    if upstream_version > version.parse(str(pkg.version)):
+                        versions[pkg.name] = str(upstream_version)
+            except Exception:
+                pass
     try:
         with open(cache_path, 'w') as f:
             json.dump({'time': int(time.time()) , 'versions': versions}, f)

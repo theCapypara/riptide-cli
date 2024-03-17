@@ -1,7 +1,7 @@
 """Riptide self-updater."""
 import os
 
-from importlib.metadata import packages_distributions
+from importlib.metadata import distributions
 from subprocess import call
 
 from riptide_cli.update_checker import get_version_cache_path
@@ -10,7 +10,7 @@ from riptide_cli.update_checker import get_version_cache_path
 def update():
     print("Updating riptide packages via pip...")
     print()
-    packages = [dist for dist in packages_distributions()['riptide'].values()]
+    packages = [dist.name for dist in distributions() if dist.name.startswith("riptide-")]
     packages.append('configcrunch')
     call("pip3 install --upgrade " + ' '.join(packages), shell=True)
     print()
