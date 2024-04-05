@@ -1,6 +1,6 @@
 import os
+import sys
 
-from importlib.metadata import distributions, version
 import warnings
 
 import click
@@ -28,10 +28,17 @@ from riptide_cli.update_checker import check_for_update
 
 
 def print_version():
-    dists = distributions()
-    for dist in dists:
-        if dist.name.startswith("riptide-"):
-            print(f"{dist.name:>30}: {version(dist.name)}")
+    if sys.version_info >= (3, 10):
+        from importlib.metadata import distributions, version
+        dists = distributions()
+        for dist in dists:
+            if dist.name.startswith("riptide-"):
+                print(f"{dist.name:>30}: {version(dist.name)}")
+    else:
+        import pkg_resources
+        for pkg in pkg_resources.working_set:
+            if pkg.key.startswith('riptide-'):
+                print(f"{pkg.key:>30}: {pkg.version}")
 
 
 @click.group(
