@@ -3,7 +3,6 @@ import shutil
 
 import click
 from click import echo
-from distutils.dir_util import copy_tree
 
 from riptide_cli.command.constants import CMD_IMPORT_DB, CMD_IMPORT_FILES
 from riptide_cli.command.db import importt_impl, cmd_constraint_has_db
@@ -81,7 +80,7 @@ def files_impl(ctx, key, path_to_import):
         if source_is_file:
             shutil.copy2(path_to_import, destination)
         else:
-            copy_tree(path_to_import, destination)
+            shutil.copytree(path_to_import, destination, dirs_exist_ok=True)
     except Exception as ex:
         raise RiptideCliError("Error while copying", ctx) from ex
 
