@@ -39,6 +39,6 @@ riptide_cwdir_hook() {
 
 riptide_cwdir_hook__remove() {
     # Remove riptide project bin path from path. Source: https://stackoverflow.com/a/370192
-    export PATH=$(echo ${PATH} | awk -v RS=: -v ORS=: "/$(echo $RIPTIDE__SH_BIN_PATH | sed 's/\//\\\//g')/ {next} {print}")
+    export PATH=$(echo -n ${PATH} | awk -v RS=: -v ORS=: "/$(echo $RIPTIDE__SH_BIN_PATH | sed 's/\//\\\//g')/ {next} {print}")
     RIPTIDE__SH_BIN_PATH=""
 }
