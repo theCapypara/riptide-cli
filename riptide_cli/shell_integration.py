@@ -34,12 +34,15 @@ def update_shell_integration(system_config: Config):
     for entry in to_remove:
         os.remove(os.path.join(bin_folder, entry))
 
+    # The executable can be overwritten via env if needed
+    executable = os.environ.get("RIPTIDE_SHELL_INTEGRATION_EXECUTABLE", sys.executable)
+
     # Create command alias files that don't exist yet:
     to_add = commands - command_files
     for entry in to_add:
         path_to_cmd_file = os.path.join(bin_folder, entry)
         with open(path_to_cmd_file, 'w') as file:
-            file.write(f"""#!{sys.executable}
+            file.write(f"""#!{executable}
 import sys
 from riptide_cli.shell_integration import run_cmd
 run_cmd("{entry}", sys.argv[1:])
@@ -66,4 +69,3 @@ def run_cmd(command_name, arguments):
     else:
         # Normal comamnd
         sys.exit(engine.cmd(system_config["project"], command_name, arguments))
-
