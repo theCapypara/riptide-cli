@@ -1,8 +1,10 @@
-__version__ = '0.8.3'
-from setuptools import setup, find_packages
+__version__ = '0.9.0'
 
 # README read-in
 from os import path
+
+from setuptools import setup, find_packages
+
 this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
@@ -20,7 +22,7 @@ setup(
     author='Marco "theCapypara" Köpcke',
     license='MIT',
     install_requires=[
-        'riptide-lib >= 0.8.0, < 0.9',
+        'riptide-lib >= 0.9, < 0.10',
         'Click >= 7.0, < 9.0',
         'colorama >= 0.4',
         'click-help-colors >= 0.5',
@@ -37,6 +39,7 @@ setup(
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
     ],
     entry_points='''
         [console_scripts]
