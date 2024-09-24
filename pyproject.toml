@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools", "setuptools-rust"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "riptide-cli"
+version = "0.9.0"
+description = "Tool to manage development environments for web applications using containers - CLI-Application"
+readme = "README.rst"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Marco Köpcke", email = "hello@capypara.de" }
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "riptide-lib >= 0.9, < 0.10",
+    "Click >= 7.0, < 9.0",
+    "colorama >= 0.4",
+    "click-help-colors >= 0.5",
+    "tqdm >= 4.38",
+    "packaging"
+]
+
+[project.urls]
+Repository = "https://github.com/theCapypara/riptide-cli"
+Documentation = "https://riptide-docs.readthedocs.io"
+
+[project.scripts]
+riptide = "riptide_cli.__main__:cli"
+riptide_upgrade = "riptide_cli.self_updater:update"
+
+[tool.setuptools]
+# Scripts for the shell integration, meant to be sourced.
+script-files = [
+    "riptide_cli/shell/riptide.hook.bash",
+    "riptide_cli/shell/riptide.hook.zsh",
+    "riptide_cli/shell/riptide.hook.common.sh"
+]
