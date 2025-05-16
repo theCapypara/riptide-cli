@@ -1,6 +1,6 @@
-Click==8.1.7
+Click==8.2.0
 colorama==0.4.6
 click-help-colors==0.9.4
-tqdm==4.66.5
-riptide-lib >= 0.8.0b1, < 0.9
+tqdm==4.67.1
+riptide-lib >= 0.10, < 0.11
 packaging
