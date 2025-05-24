@@ -321,7 +321,7 @@ def load(main):
             if "commands" not in project["app"] or len(project["app"]["commands"]) < 1:
                 click.echo(TAB + "No commands specified.")
                 return
-            for name, cmd in project["app"]["commands"].items():
+            for name, cmd in dict(sorted(project["app"]["commands"].items())).items():
                 if "aliases" in cmd:
                     # alias
                     click.echo(TAB + "- " + click.style(name, bold=True) + " (alias for " + cmd["aliases"] + ")")
