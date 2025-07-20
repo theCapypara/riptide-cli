@@ -4,3 +4,5 @@ click-help-colors==0.9.4
 tqdm==4.67.1
 riptide-lib >= 0.10, < 0.11
 packaging
+ruff
+mypy

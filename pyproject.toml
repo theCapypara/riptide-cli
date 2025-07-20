@@ -45,3 +45,16 @@ script-files = [
     "riptide_cli/shell/riptide.hook.zsh",
     "riptide_cli/shell/riptide.hook.common.sh"
 ]
+
+[tool.ruff]
+line-length = 120
+
+[tools.ruff.lint]
+select = ["W", "E", "F", "ARG"]
+
+[tool.mypy]
+warn_unused_configs = true
+mypy_path = "."
+explicit_package_bases = true
+namespace_packages = true
+check_untyped_defs = true
