@@ -6,13 +6,15 @@ import warnings
 import click
 from click import echo
 
-if __name__ == '__main__':
-    warnings.simplefilter('ignore', DeprecationWarning)
+if __name__ == "__main__":
+    warnings.simplefilter("ignore", DeprecationWarning)
     from riptide.config.errors import RiptideDeprecationWarning
-    warnings.simplefilter('always', RiptideDeprecationWarning)
+
+    warnings.simplefilter("always", RiptideDeprecationWarning)
     try:
         from cryptography import CryptographyDeprecationWarning
-        warnings.simplefilter('ignore', CryptographyDeprecationWarning)
+
+        warnings.simplefilter("ignore", CryptographyDeprecationWarning)
     except:
         pass
 
@@ -30,39 +32,51 @@ from riptide_cli.update_checker import check_for_update
 def print_version():
     if sys.version_info >= (3, 10):
         from importlib.metadata import distributions, version
+
         dists = distributions()
         for dist in dists:
             if dist.name.startswith("riptide-"):
                 print(f"{dist.name:>30}: {version(dist.name)}")
     else:
         import pkg_resources
+
         for pkg in pkg_resources.working_set:
-            if pkg.key.startswith('riptide-'):
+            if pkg.key.startswith("riptide-"):
                 print(f"{pkg.key:>30}: {pkg.version}")
 
 
-@click.group(
-    name="riptide",
-    cls=ClickMainGroup,
-    help_headers_color='yellow',
-    help_options_color='cyan',
-    chain=True
+@click.group(name="riptide", cls=ClickMainGroup, help_headers_color="yellow", help_options_color="cyan", chain=True)
+@click.option(
+    "-P",
+    "--project",
+    required=False,
+    type=str,
+    help="Name of the project to use. If not given, will use --project-file.",
 )
-@click.option('-P', '--project', required=False, type=str,
-              help="Name of the project to use. If not given, will use --project-file.")
-@click.option('-p', '--project-file', required=False, type=str,
-              help="Path to the project file, if not given, the file will be located automatically.")
-@click.option('-v', '--verbose', is_flag=True,
-              help="Print errors and debugging information.")
-@click.option('--rename', is_flag=True, hidden=True,
-              help="If project with this name already exists at different location, rename it to use this location.")
-@click.option('--version', is_flag=True,
-              help="Print version and exit.")
-@click.option('-i', '--ignore-shell', is_flag=True,
-              help="Don't print a warning when shell integration is disabled.")
+@click.option(
+    "-p",
+    "--project-file",
+    required=False,
+    type=str,
+    help="Path to the project file, if not given, the file will be located automatically.",
+)
+@click.option("-v", "--verbose", is_flag=True, help="Print errors and debugging information.")
+@click.option(
+    "--rename",
+    is_flag=True,
+    hidden=True,
+    help="If project with this name already exists at different location, rename it to use this location.",
+)
+@click.option("--version", is_flag=True, help="Print version and exit.")
+@click.option("-i", "--ignore-shell", is_flag=True, help="Don't print a warning when shell integration is disabled.")
 # DEPRECATED OPTIONS:
-@click.option('-u', '--update', is_flag=True, hidden=True,
-              help="Update repositories and pull images before executing the command.")
+@click.option(
+    "-u",
+    "--update",
+    is_flag=True,
+    hidden=True,
+    help="Update repositories and pull images before executing the command.",
+)
 @click.pass_context
 def cli(ctx, version=False, update=False, ignore_shell=False, project=None, project_file=None, verbose=False, **kwargs):
     """
@@ -80,7 +94,7 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
 
     # Don't allow running as root.
     try:
-        if os.getuid() == 0 and 'RIPTIDE_ALLOW_ROOT' not in os.environ:
+        if os.getuid() == 0 and "RIPTIDE_ALLOW_ROOT" not in os.environ:
             raise RiptideCliError("riptide must not be run as the root user.", ctx=ctx)
     except AttributeError:
         # Windows. Ignore.
@@ -94,13 +108,16 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
 
     new_versions = check_for_update()
     if new_versions:
-        new_versions = '\n'.join([f"    {pkg:<22}: {version}" for pkg, version in new_versions.items()])
-        warn(f"A new Riptide version is available:\n"
-             f"{new_versions}\n\n"
-             f"Use riptide_upgrade to upgrade. You may NEED to use sudo, see:\n"
-             f"    https://riptide-docs.readthedocs.io/en/latest/user_docs/2a_linux.html#updating-riptide\n", False)
+        new_versions = "\n".join([f"    {pkg:<22}: {version}" for pkg, version in new_versions.items()])
+        warn(
+            f"A new Riptide version is available:\n"
+            f"{new_versions}\n\n"
+            f"Use riptide_upgrade to upgrade. You may NEED to use sudo, see:\n"
+            f"    https://riptide-docs.readthedocs.io/en/latest/user_docs/2a_linux.html#updating-riptide\n",
+            False,
+        )
 
-    if 'RIPTIDE_SHELL_LOADED' not in os.environ and not ctx.resilient_parsing and not ignore_shell:
+    if "RIPTIDE_SHELL_LOADED" not in os.environ and not ctx.resilient_parsing and not ignore_shell:
         warn("Riptide shell integration not enabled.")
         echo()
 
@@ -112,15 +129,11 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
             raise RiptideCliError(
                 f"Project {project} not found. --project/-P "
                 f"can only be used if the project was loaded with Riptide at least once.",
-                ctx
+                ctx,
             )
 
     # Setup basic variables
-    ctx.riptide_options = {
-        "project": project_file,
-        "verbose": verbose,
-        "rename": False
-    }
+    ctx.riptide_options = {"project": project_file, "verbose": verbose, "rename": False}
     ctx.riptide_options.update(kwargs)
 
 

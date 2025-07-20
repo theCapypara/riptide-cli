@@ -5,8 +5,16 @@ import json
 from asyncio import sleep
 from click import style, echo
 
-from riptide_cli.command.constants import CMD_DB_LIST, CMD_DB_SWITCH, CMD_DB_NEW, CMD_DB_DROP, CMD_DB_COPY, \
-    CMD_DB_IMPORT, CMD_DB_STATUS, CMD_DB_EXPORT
+from riptide_cli.command.constants import (
+    CMD_DB_LIST,
+    CMD_DB_SWITCH,
+    CMD_DB_NEW,
+    CMD_DB_DROP,
+    CMD_DB_COPY,
+    CMD_DB_IMPORT,
+    CMD_DB_STATUS,
+    CMD_DB_EXPORT,
+)
 from riptide_cli.helpers import cli_section, TAB, RiptideCliError, async_command
 from riptide_cli.lifecycle import stop_project, start_project
 from riptide.db.driver import db_driver_for_service
@@ -17,8 +25,9 @@ from riptide_cli.loader import cmd_constraint_project_loaded, load_riptide_core
 def cmd_constraint_has_db(ctx):
     cmd_constraint_project_loaded(ctx)
     if not DbEnvironments.has_db(ctx.system_config["project"]):
-        raise RiptideCliError("The project doesn't have a service with the role 'db'. "
-                              "This is required to use this command.", ctx)
+        raise RiptideCliError(
+            "The project doesn't have a service with the role 'db'. This is required to use this command.", ctx
+        )
 
 
 def load(main):
@@ -46,22 +55,19 @@ def load(main):
         else:
             echo(f"{'Status':<20}: " + style("Not running", bold=True, fg="red"))
 
-        for key,label in db_driver.collect_info().items():
+        for key, label in db_driver.collect_info().items():
             echo(f"{key:<20}: {label}")
 
         current = dbenv.currently_selected_name()
         echo("Active environment  : " + style(current, bold=True))
 
-
     @cli_section("Database")
     @main.command(CMD_DB_LIST)
     @click.pass_context
-    @click.option('--machine-readable', is_flag=True, default=False,
-                  help='Print machine readable output (JSON)')
-    @click.option('--current', is_flag=True, default=False,
-                  help='Print current used env')
+    @click.option("--machine-readable", is_flag=True, default=False, help="Print machine readable output (JSON)")
+    @click.option("--current", is_flag=True, default=False, help="Print current used env")
     def lst(ctx, machine_readable, current):
-        """ Lists database environments """
+        """Lists database environments"""
         load_riptide_core(ctx)
         cmd_constraint_has_db(ctx)
 
@@ -83,20 +89,17 @@ def load(main):
             echo()
             echo("Use db-switch to switch environments.")
         elif not current:
-            echo(json.dumps({
-                "envs": dbenv.list(),
-                "current": cur
-            }))
+            echo(json.dumps({"envs": dbenv.list(), "current": cur}))
         else:
             echo(cur)
 
     @cli_section("Database")
     @main.command(CMD_DB_SWITCH)
     @click.pass_context
-    @click.argument('name')
+    @click.argument("name")
     @async_command()
     async def switch(ctx, name):
-        """ Switches the active database environment """
+        """Switches the active database environment"""
         load_riptide_core(ctx)
         cmd_constraint_has_db(ctx)
 
@@ -105,11 +108,11 @@ def load(main):
     @cli_section("Database")
     @main.command(CMD_DB_NEW)
     @click.pass_context
-    @click.option('-s', '--stay', is_flag=True, help="If set, don't switch to the newly created environment.")
-    @click.argument('name')
+    @click.option("-s", "--stay", is_flag=True, help="If set, don't switch to the newly created environment.")
+    @click.argument("name")
     @async_command()
     async def new(ctx, stay, name):
-        """ Create a new (blank) database environment """
+        """Create a new (blank) database environment"""
         load_riptide_core(ctx)
         cmd_constraint_has_db(ctx)
 
@@ -135,9 +138,9 @@ def load(main):
     @cli_section("Database")
     @main.command(CMD_DB_DROP)
     @click.pass_context
-    @click.argument('name')
+    @click.argument("name")
     def drop(ctx, name):
-        """ Delete a database environment """
+        """Delete a database environment"""
         load_riptide_core(ctx)
         cmd_constraint_has_db(ctx)
 
@@ -161,12 +164,12 @@ def load(main):
     @cli_section("Database")
     @main.command(CMD_DB_COPY)
     @click.pass_context
-    @click.option('-s', '--stay', is_flag=True, help="If set, don't switch to the newly created environment.")
-    @click.argument('name_to_copy')
-    @click.argument('name_new')
+    @click.option("-s", "--stay", is_flag=True, help="If set, don't switch to the newly created environment.")
+    @click.argument("name_to_copy")
+    @click.argument("name_new")
     @async_command()
     async def copy(ctx, stay, name_to_copy, name_new):
-        """ Copy an existing database environment """
+        """Copy an existing database environment"""
         load_riptide_core(ctx)
         cmd_constraint_has_db(ctx)
 
@@ -194,7 +197,7 @@ def load(main):
 
     @cli_section("Database")
     @main.command(CMD_DB_IMPORT)
-    @click.argument('file')
+    @click.argument("file")
     @click.pass_context
     @async_command()
     async def importt(ctx, file):
@@ -209,7 +212,7 @@ def load(main):
 
     @cli_section("Database")
     @main.command(CMD_DB_EXPORT)
-    @click.argument('file')
+    @click.argument("file")
     @click.pass_context
     @async_command()
     async def export(ctx, file):

@@ -17,10 +17,10 @@ def update_shell_integration(system_config: Config):
     """
     # Write project name to file
     meta_folder = get_project_meta_folder(system_config["project"].folder())
-    with open(os.path.join(meta_folder, 'name'), 'w') as project_name_file:
+    with open(os.path.join(meta_folder, "name"), "w") as project_name_file:
         project_name_file.write(system_config["project"]["name"])
 
-    bin_folder = os.path.join(meta_folder, 'bin')
+    bin_folder = os.path.join(meta_folder, "bin")
     os.makedirs(bin_folder, exist_ok=True)
 
     command_files = {f for f in os.listdir(bin_folder) if os.path.isfile(os.path.join(bin_folder, f))}
@@ -41,7 +41,7 @@ def update_shell_integration(system_config: Config):
     to_add = commands - command_files
     for entry in to_add:
         path_to_cmd_file = os.path.join(bin_folder, entry)
-        with open(path_to_cmd_file, 'w') as file:
+        with open(path_to_cmd_file, "w") as file:
             file.write(f"""#!{executable}
 import sys
 from riptide_cli.shell_integration import run_cmd
