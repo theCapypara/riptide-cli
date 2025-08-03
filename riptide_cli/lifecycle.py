@@ -1,12 +1,10 @@
 import os
 from collections import OrderedDict
-from typing import List
 
 from click import echo, style
-from tqdm import tqdm
-
 from riptide.engine.status import status_for
-from riptide_cli.helpers import RiptideCliError, TAB, get_is_verbose
+from riptide_cli.helpers import TAB, RiptideCliError, get_is_verbose
+from tqdm import tqdm
 
 
 def text_width_right():
@@ -37,7 +35,7 @@ def _build_progress_bars(services):
             total=1,
             position=i,
             bar_format="{desc}{n_fmt}/{total_fmt}|{bar}| {postfix[0]}",
-            postfix=["...".ljust(text_width_right())],
+            postfix="...".ljust(text_width_right()),
         )
         i += 1
         progress_bars[service_name].set_description(service_name.ljust(longest_service_name_len))
@@ -88,7 +86,7 @@ def display_errors(errors, ctx):
                 echo(style(str(error["error_traceback"]), bg="red"))
 
 
-async def start_project(ctx, services: List[str], show_status=True, quick=False, *, command_group: str = "default"):
+async def start_project(ctx, services: list[str], show_status=True, quick=False, *, command_group: str = "default"):
     """
     Starts a project by starting all it's services (or a subset).
     If show_status is true, shows status after that.
@@ -124,7 +122,7 @@ async def start_project(ctx, services: List[str], show_status=True, quick=False,
         status_project(ctx)
 
 
-async def stop_project(ctx, services: List[str], show_status=True):
+async def stop_project(ctx, services: list[str], show_status=True):
     """
     Stops a project by stopping all it's services (or a subset).
     If show_status is true, shows status after that.

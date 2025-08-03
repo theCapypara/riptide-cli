@@ -1,6 +1,4 @@
 import os
-import sys
-
 import warnings
 
 import click
@@ -12,37 +10,33 @@ if __name__ == "__main__":
 
     warnings.simplefilter("always", RiptideDeprecationWarning)
     try:
-        from cryptography import CryptographyDeprecationWarning
+        from cryptography import CryptographyDeprecationWarning  # type: ignore
 
         warnings.simplefilter("ignore", CryptographyDeprecationWarning)
-    except:
+    except ImportError:
         pass
 
 
+import riptide_cli.command.config
+import riptide_cli.command.db
+import riptide_cli.command.importt
+import riptide_cli.command.project
+import riptide_cli.command.projects
 from riptide.config.loader import load_projects
 from riptide.plugin.loader import load_plugins
 from riptide.util import SystemFlag
 from riptide_cli.click import ClickMainGroup
-
 from riptide_cli.helpers import RiptideCliError, warn
-import riptide_cli.command
 from riptide_cli.update_checker import check_for_update
 
 
 def print_version():
-    if sys.version_info >= (3, 10):
-        from importlib.metadata import distributions, version
+    from importlib.metadata import distributions, version
 
-        dists = distributions()
-        for dist in dists:
-            if dist.name.startswith("riptide-"):
-                print(f"{dist.name:>30}: {version(dist.name)}")
-    else:
-        import pkg_resources
-
-        for pkg in pkg_resources.working_set:
-            if pkg.key.startswith("riptide-"):
-                print(f"{pkg.key:>30}: {pkg.version}")
+    dists = distributions()
+    for dist in dists:
+        if dist.name.startswith("riptide-"):
+            print(f"{dist.name:>30}: {version(dist.name)}")
 
 
 @click.group(name="riptide", cls=ClickMainGroup, help_headers_color="yellow", help_options_color="cyan", chain=True)
@@ -107,11 +101,11 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
         raise RiptideCliError("--update/-u is deprecated. Please run 'riptide update' instead.", ctx)
 
     new_versions = check_for_update()
-    if new_versions:
-        new_versions = "\n".join([f"    {pkg:<22}: {version}" for pkg, version in new_versions.items()])
+    if new_versions is not None:
+        new_versions_str = "\n".join([f"    {pkg:<22}: {version}" for pkg, version in new_versions.items()])
         warn(
             f"A new Riptide version is available:\n"
-            f"{new_versions}\n\n"
+            f"{new_versions_str}\n\n"
             f"Use riptide_upgrade to upgrade. You may NEED to use sudo, see:\n"
             f"    https://riptide-docs.readthedocs.io/en/latest/user_docs/2a_linux.html#updating-riptide\n",
             False,

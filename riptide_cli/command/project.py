@@ -4,7 +4,6 @@ import sys
 import click
 from click import echo, style
 from click.exceptions import Exit
-from typing import Union
 
 from riptide.config.command import in_service
 from riptide.config.document.command import KEY_IDENTIFIER_IN_SERVICE_COMMAND
@@ -27,7 +26,7 @@ from riptide_cli.setup_assistant import setup_assistant
 from riptide.engine.abstract import ExecError, AbstractEngine
 
 
-def interrupt_handler(ctx, ex: Union[KeyboardInterrupt, SystemExit]):
+def interrupt_handler(ctx, ex: KeyboardInterrupt | SystemExit):
     """Handle interrupts raised while running asynchronous AsyncIO code, fun stuff!"""
     # In case there are any open progress bars, close them:
     if hasattr(ctx, "progress_bars"):
@@ -423,7 +422,7 @@ def load(main):
                 engine.exec(project, service, cols=cols, lines=lines, root=root)
             else:
                 if "RIPTIDE_DONT_SHOW_EXEC_WARNING" not in os.environ:
-                    warn(f"""Using exec --command is not recommended. Please consider creating a Command object instead.
+                    warn("""Using exec --command is not recommended. Please consider creating a Command object instead.
 
 Please see the documentation for more information. 
 To suppress this warning, set the environment variable RIPTIDE_DONT_SHOW_EXEC_WARNING.""")

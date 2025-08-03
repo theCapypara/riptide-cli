@@ -1,10 +1,9 @@
 import asyncio
 import traceback
-from click import style, echo, ClickException
-from click._compat import get_text_stderr
 from functools import update_wrapper
 
-from schema import SchemaError
+from click import ClickException, echo, style
+from click._compat import get_text_stderr
 
 
 def get_is_verbose(ctx):
@@ -35,7 +34,7 @@ class RiptideCliError(ClickException):
             echo(style(traceback.format_exc(), bg="red"), file=file)
         else:
             echo(style(self.message, bg="red", fg="white", bold=True), file=file)
-            current_err = self
+            current_err: BaseException = self
             previous_message = str(self)
             while current_err.__context__ is not None:
                 current_err = current_err.__context__

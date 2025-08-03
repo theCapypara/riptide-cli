@@ -1,15 +1,13 @@
 import os
 from sys import stdin
 
-from click import style, echo, getchar
-
-from riptide_cli.command.db import importt_impl
-from riptide_cli.command.importt import files_impl
-from riptide_cli.helpers import RiptideCliError, TAB, header
+from click import echo, getchar, style
 from riptide.config.files import get_project_setup_flag_path
 from riptide.db.driver import db_driver_for_service
 from riptide.db.environments import DbEnvironments
-
+from riptide_cli.command.db import importt_impl
+from riptide_cli.command.importt import files_impl
+from riptide_cli.helpers import TAB, RiptideCliError, header
 
 CMD_SEP = style("-----", fg="cyan")
 
@@ -94,7 +92,9 @@ async def setup_assistant(ctx, force, skip):
     # Import db
     if db_can_be_imported:
         dbenv = DbEnvironments(project, engine)
+        assert dbenv.db_service is not None
         db_driver = db_driver_for_service.get(dbenv.db_service)
+        assert db_driver is not None  # todo: error handling
         echo(TAB + header("> DATABASE IMPORT"))
         echo(
             style(

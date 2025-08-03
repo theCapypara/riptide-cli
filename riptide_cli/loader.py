@@ -1,15 +1,13 @@
 import os
-import sys
 
 from click import echo
-
 from configcrunch import ReferencedDocumentNotFound
 from riptide.config.files import get_project_setup_flag_path
 from riptide.config.hosts import update_hosts_file
 from riptide.config.loader import load_config, write_project
 from riptide.engine.loader import load_engine
 from riptide_cli.command.constants import CMD_CONFIG_EDIT_USER
-from riptide_cli.helpers import warn, RiptideCliError
+from riptide_cli.helpers import RiptideCliError, warn
 from riptide_cli.shell_integration import update_shell_integration
 
 

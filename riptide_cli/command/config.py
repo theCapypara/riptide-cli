@@ -1,5 +1,3 @@
-import sys
-
 import click
 import os.path
 import yaml
@@ -22,9 +20,6 @@ from riptide.config.files import (
     RIPTIDE_PROJECT_CONFIG_NAME,
 )
 from riptide_cli.loader import load_riptide_system_config, load_riptide_core
-
-from functools import partial
-from riptide.config.service.config_files_helper_functions import read_file
 
 
 def load(main):

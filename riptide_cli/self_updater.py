@@ -10,14 +10,9 @@ from riptide_cli.update_checker import get_version_cache_path
 def update():
     print("Updating riptide packages via pip...")
     print()
-    if sys.version_info >= (3, 10):
-        from importlib.metadata import distributions
+    from importlib.metadata import distributions
 
-        packages = [dist.name for dist in distributions() if dist.name.startswith("riptide-")]
-    else:
-        import pkg_resources
-
-        packages = [dist.project_name for dist in pkg_resources.working_set if dist.project_name.startswith("riptide-")]
+    packages = [dist.name for dist in distributions() if dist.name.startswith("riptide-")]
     packages.append("configcrunch")
     call(f"{sys.executable} -m pip install --upgrade " + " ".join(packages), shell=True)
     print()

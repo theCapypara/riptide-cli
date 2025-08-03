@@ -20,6 +20,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "riptide-lib >= 0.10, < 0.11",
@@ -58,3 +59,9 @@ mypy_path = "."
 explicit_package_bases = true
 namespace_packages = true
 check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "schema",
+]
+ignore_missing_imports = true

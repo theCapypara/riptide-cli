@@ -1,7 +1,7 @@
 """Click extension module"""
 
 # TODO: Colored subcommand help
-from click import Option, Command
+from click import Command
 from click_help_colors import HelpColorsGroup
 
 
@@ -45,14 +45,14 @@ class ClickMainGroup(HelpColorsGroup):
         if len(commands):
             limit = formatter.width - 6 - max(len(cmd[0]) for cmd in commands)
 
-            sections = {}
+            sections: dict[str, list[tuple[str, str]]] = {}
             for subcommand, cmd in commands:
                 help = cmd.get_short_help_str(limit)
                 if not hasattr(cmd, "riptide_section"):
-                    cmd.riptide_section = "General"
-                if cmd.riptide_section not in sections:
-                    sections[cmd.riptide_section] = []
-                sections[cmd.riptide_section].append((subcommand, help))
+                    cmd.riptide_section = "General"  # type: ignore
+                if cmd.riptide_section not in sections:  # type: ignore
+                    sections[cmd.riptide_section] = []  # type: ignore
+                sections[cmd.riptide_section].append((subcommand, help))  # type: ignore
 
             for section_name, rows in sections.items():
                 with formatter.section(section_name + " Commands"):
