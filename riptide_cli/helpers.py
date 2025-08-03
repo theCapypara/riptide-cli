@@ -5,7 +5,6 @@ from functools import update_wrapper
 from click import ClickException, echo, style
 from click._compat import get_text_stderr
 from riptide.engine.results import ResultQueue
-from riptide_cli.lifecycle import display_errors
 
 
 def get_is_verbose(ctx):
@@ -108,6 +107,8 @@ def interrupt_handler(ctx, ex: KeyboardInterrupt | SystemExit):
             progress_bar.close()
             echo()
     if hasattr(ctx, "start_stop_errors"):
+        from riptide_cli.lifecycle import display_errors
+
         display_errors(ctx.start_stop_errors, ctx)
     echo(
         style(
