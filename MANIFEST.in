@@ -1,1 +1,2 @@
 graft riptide_cli/shell
+recursive-include riptide_cli py.typed
