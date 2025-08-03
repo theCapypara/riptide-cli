@@ -4,6 +4,8 @@ from functools import update_wrapper
 
 from click import ClickException, echo, style
 from click._compat import get_text_stderr
+from riptide.engine.results import ResultQueue
+from riptide_cli.lifecycle import display_errors
 
 
 def get_is_verbose(ctx):
@@ -96,3 +98,26 @@ def header(msg, bold=False):
 
 
 TAB = "    "
+
+
+def interrupt_handler(ctx, ex: KeyboardInterrupt | SystemExit):
+    """Handle interrupts raised while running asynchronous AsyncIO code, fun stuff!"""
+    # In case there are any open progress bars, close them:
+    if hasattr(ctx, "progress_bars"):
+        for progress_bar in reversed(ctx.progress_bars.values()):
+            progress_bar.close()
+            echo()
+    if hasattr(ctx, "start_stop_errors"):
+        display_errors(ctx.start_stop_errors, ctx)
+    echo(
+        style(
+            "Riptide process was interrupted. Services might be in an invalid state. You may want to run riptide stop.",
+            bg="red",
+            fg="white",
+        )
+    )
+    echo("Finishing up... Stand by!")
+    # Poison all ResultQueues to halt all start/stop threads after the next step.
+    ResultQueue.poison()
+    echo("Done!")
+    exit(1)

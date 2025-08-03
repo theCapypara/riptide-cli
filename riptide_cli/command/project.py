@@ -4,49 +4,31 @@ import sys
 import click
 from click import echo, style
 from click.exceptions import Exit
-
 from riptide.config.command import in_service
 from riptide.config.document.command import KEY_IDENTIFIER_IN_SERVICE_COMMAND
-from riptide.engine.results import ResultQueue
+from riptide.engine.abstract import AbstractEngine, ExecError
 from riptide_cli.command.constants import (
-    CMD_STATUS,
-    CMD_START,
-    CMD_START_FG,
-    CMD_STOP,
-    CMD_RESTART,
     CMD_CMD,
-    CMD_SETUP,
     CMD_EXEC,
     CMD_NOTES,
+    CMD_RESTART,
+    CMD_SETUP,
+    CMD_START,
+    CMD_START_FG,
+    CMD_STATUS,
+    CMD_STOP,
 )
-from riptide_cli.helpers import cli_section, async_command, RiptideCliError, TAB, warn
-from riptide_cli.lifecycle import start_project, stop_project, display_errors, status_project
+from riptide_cli.helpers import (
+    TAB,
+    RiptideCliError,
+    async_command,
+    cli_section,
+    interrupt_handler,
+    warn,
+)
+from riptide_cli.lifecycle import start_project, status_project, stop_project
 from riptide_cli.loader import cmd_constraint_project_loaded, load_riptide_core
 from riptide_cli.setup_assistant import setup_assistant
-from riptide.engine.abstract import ExecError, AbstractEngine
-
-
-def interrupt_handler(ctx, ex: KeyboardInterrupt | SystemExit):
-    """Handle interrupts raised while running asynchronous AsyncIO code, fun stuff!"""
-    # In case there are any open progress bars, close them:
-    if hasattr(ctx, "progress_bars"):
-        for progress_bar in reversed(ctx.progress_bars.values()):
-            progress_bar.close()
-            echo()
-    if hasattr(ctx, "start_stop_errors"):
-        display_errors(ctx.start_stop_errors, ctx)
-    echo(
-        style(
-            "Riptide process was interrupted. Services might be in an invalid state. You may want to run riptide stop.",
-            bg="red",
-            fg="white",
-        )
-    )
-    echo("Finishing up... Stand by!")
-    # Poison all ResultQueues to halt all start/stop threads after the next step.
-    ResultQueue.poison()
-    echo("Done!")
-    exit(1)
 
 
 def cmd_constraint_project_set_up(ctx):
