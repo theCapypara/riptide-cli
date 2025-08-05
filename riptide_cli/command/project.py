@@ -4,45 +4,41 @@ import sys
 import click
 from click import echo, style
 from click.exceptions import Exit
-from typing import Union
-
 from riptide.config.command import in_service
 from riptide.config.document.command import KEY_IDENTIFIER_IN_SERVICE_COMMAND
-from riptide.engine.results import ResultQueue
-from riptide_cli.command.constants import CMD_STATUS, CMD_START, CMD_START_FG, CMD_STOP, CMD_RESTART, CMD_CMD, \
-    CMD_SETUP, CMD_EXEC, CMD_NOTES
-from riptide_cli.helpers import cli_section, async_command, RiptideCliError, TAB, warn
-from riptide_cli.lifecycle import start_project, stop_project, display_errors, status_project
+from riptide.engine.abstract import AbstractEngine, ExecError
+from riptide_cli.command.constants import (
+    CMD_CMD,
+    CMD_EXEC,
+    CMD_NOTES,
+    CMD_RESTART,
+    CMD_SETUP,
+    CMD_START,
+    CMD_START_FG,
+    CMD_STATUS,
+    CMD_STOP,
+)
+from riptide_cli.helpers import (
+    TAB,
+    RiptideCliError,
+    async_command,
+    cli_section,
+    interrupt_handler,
+    warn,
+)
+from riptide_cli.lifecycle import start_project, status_project, stop_project
 from riptide_cli.loader import cmd_constraint_project_loaded, load_riptide_core
 from riptide_cli.setup_assistant import setup_assistant
-from riptide.engine.abstract import ExecError, AbstractEngine
-
-
-def interrupt_handler(ctx, ex: Union[KeyboardInterrupt, SystemExit]):
-    """Handle interrupts raised while running asynchronous AsyncIO code, fun stuff!"""
-    # In case there are any open progress bars, close them:
-    if hasattr(ctx, "progress_bars"):
-        for progress_bar in reversed(ctx.progress_bars.values()):
-            progress_bar.close()
-            echo()
-    if hasattr(ctx, "start_stop_errors"):
-        display_errors(ctx.start_stop_errors, ctx)
-    echo(style('Riptide process was interrupted. '
-               'Services might be in an invalid state. You may want to run riptide stop.', bg='red', fg='white'))
-    echo("Finishing up... Stand by!")
-    # Poison all ResultQueues to halt all start/stop threads after the next step.
-    ResultQueue.poison()
-    echo("Done!")
-    exit(1)
 
 
 def cmd_constraint_project_set_up(ctx):
     cmd_constraint_project_loaded(ctx)
     if not ctx.project_is_set_up:
-        echo(style("Thanks for using Riptide! You seem to be working with a new project.\n"
-                   "Please run the ", fg='yellow')
-             + style("setup", bold=True, fg='yellow')
-             + style(" command first.", fg='yellow'))
+        echo(
+            style("Thanks for using Riptide! You seem to be working with a new project.\nPlease run the ", fg="yellow")
+            + style("setup", bold=True, fg="yellow")
+            + style(" command first.", fg="yellow")
+        )
         raise Exit(1)
 
 
@@ -63,11 +59,17 @@ def load(main):
     @cli_section("Service")
     @main.command(CMD_START)
     @click.pass_context
-    @click.option('--default', '-d', required=False, is_flag=True, help='Start all default services.')
-    @click.option('--all', '-a', required=False, is_flag=True, help='Start all services.')
-    @click.option('--services', '-s', required=False, help='Names of services to start, comma-separated (default: all)')
-    @click.option('--cmd', '-c', required=False, show_default=True, default="default",
-                  help='Command group to use for started services.')
+    @click.option("--default", "-d", required=False, is_flag=True, help="Start all default services.")
+    @click.option("--all", "-a", required=False, is_flag=True, help="Start all services.")
+    @click.option("--services", "-s", required=False, help="Names of services to start, comma-separated (default: all)")
+    @click.option(
+        "--cmd",
+        "-c",
+        required=False,
+        show_default=True,
+        default="default",
+        help="Command group to use for started services.",
+    )
     @async_command(interrupt_handler=interrupt_handler)
     async def start(ctx, default, all, services, cmd):
         """
@@ -102,17 +104,26 @@ def load(main):
         await start_project(ctx, services_to_start, command_group=cmd)
 
     @cli_section("Service")
-    @main.command(CMD_START_FG, context_settings={
-        'ignore_unknown_options': True  # Make all unknown options redirect to arguments
-    })
+    @main.command(
+        CMD_START_FG,
+        context_settings={
+            "ignore_unknown_options": True  # Make all unknown options redirect to arguments
+        },
+    )
     @click.pass_context
-    @click.option('--default', '-d', required=False, is_flag=True, help='Start all default services.')
-    @click.option('--all', '-a', required=False, is_flag=True, help='Start all services.')
-    @click.option('--services', '-s', required=False, help='Names of services to start, comma-separated.')
-    @click.option('--cmd', '-c', required=False, show_default=True, default="default",
-                  help='Command group to use for started services.')
-    @click.argument('interactive_service', required=True)
-    @click.argument('arguments', required=False, nargs=-1, type=click.UNPROCESSED)
+    @click.option("--default", "-d", required=False, is_flag=True, help="Start all default services.")
+    @click.option("--all", "-a", required=False, is_flag=True, help="Start all services.")
+    @click.option("--services", "-s", required=False, help="Names of services to start, comma-separated.")
+    @click.option(
+        "--cmd",
+        "-c",
+        required=False,
+        show_default=True,
+        default="default",
+        help="Command group to use for started services.",
+    )
+    @click.argument("interactive_service", required=True)
+    @click.argument("arguments", required=False, nargs=-1, type=click.UNPROCESSED)
     @async_command(interrupt_handler=interrupt_handler)
     async def start_fg(ctx, default, all, services, interactive_service, arguments, cmd):
         """
@@ -174,21 +185,21 @@ def load(main):
         if interactive_service in normal_services:
             normal_services.remove(interactive_service)
 
-        echo(style("(1/3) Starting other services...", bg='cyan', fg='white'))
+        echo(style("(1/3) Starting other services...", bg="cyan", fg="white"))
         await start_project(ctx, normal_services, show_status=False, command_group=cmd)
 
-        echo(style(f"(2/3) Stopping {interactive_service}...", bg='cyan', fg='white'))
+        echo(style(f"(2/3) Stopping {interactive_service}...", bg="cyan", fg="white"))
         await stop_project(ctx, [interactive_service], show_status=False)
 
-        echo(style(f"(3/3) Starting in {interactive_service} foreground mode...", bg='cyan', fg='white'))
+        echo(style(f"(3/3) Starting in {interactive_service} foreground mode...", bg="cyan", fg="white"))
         engine.service_fg(project, interactive_service, arguments, cmd)
 
     @cli_section("Service")
     @main.command(CMD_STOP)
     @click.pass_context
-    @click.option('--default', '-d', required=False, is_flag=True, help='Stop all default services.')
-    @click.option('--all', '-a', required=False, is_flag=True, help='Stop all services.')
-    @click.option('--services', '-s', required=False, help='Names of services to stop, comma-separated.')
+    @click.option("--default", "-d", required=False, is_flag=True, help="Stop all default services.")
+    @click.option("--all", "-a", required=False, is_flag=True, help="Stop all services.")
+    @click.option("--services", "-s", required=False, help="Names of services to stop, comma-separated.")
     @async_command(interrupt_handler=interrupt_handler)
     async def stop(ctx, default, all, services):
         """
@@ -223,11 +234,17 @@ def load(main):
     @cli_section("Service")
     @main.command(CMD_RESTART)
     @click.pass_context
-    @click.option('--default', '-d', required=False, is_flag=True, help='Restart all default services.')
-    @click.option('--all', '-a', required=False, is_flag=True, help='Restart all services.')
-    @click.option('--services', '-s', required=False, help='Names of services to restart, comma-separated.')
-    @click.option('--cmd', '-c', required=False, show_default=True, default="default",
-                  help='Command group to use for started services.')
+    @click.option("--default", "-d", required=False, is_flag=True, help="Restart all default services.")
+    @click.option("--all", "-a", required=False, is_flag=True, help="Restart all services.")
+    @click.option("--services", "-s", required=False, help="Names of services to restart, comma-separated.")
+    @click.option(
+        "--cmd",
+        "-c",
+        required=False,
+        show_default=True,
+        default="default",
+        help="Command group to use for started services.",
+    )
     @async_command(interrupt_handler=interrupt_handler)
     async def restart(ctx, default, all, services, cmd):
         """
@@ -265,8 +282,9 @@ def load(main):
             services_to_restart = services.split(",")
 
         if len(services_to_restart) < 1:
-            raise RiptideCliError("No services were running. "
-                                  "If you want to restart all, set the flag -a. See help page.", ctx)
+            raise RiptideCliError(
+                "No services were running. If you want to restart all, set the flag -a. See help page.", ctx
+            )
 
         await stop_project(ctx, services_to_restart, show_status=False)
         await start_project(ctx, services_to_restart, command_group=cmd)
@@ -275,7 +293,7 @@ def load(main):
     @main.command(CMD_NOTES)
     @click.pass_context
     def notes(ctx):
-        """ Shows installation and usage notices for this app. """
+        """Shows installation and usage notices for this app."""
         load_riptide_core(ctx)
         cmd_constraint_project_loaded(ctx)
 
@@ -283,22 +301,25 @@ def load(main):
             warn("There are no notes defined for this project.")
             return
         notes = ctx.system_config["project"]["app"]["notices"]
-        if 'installation' in notes:
+        if "installation" in notes:
             echo(style("Installation notice:", bold=True))
-            echo(notes['installation'])
+            echo(notes["installation"])
 
         echo()
-        if 'usage' in notes:
+        if "usage" in notes:
             echo(style("General usage notice:", bold=True))
-            echo(notes['usage'])
+            echo(notes["usage"])
 
     @cli_section("CLI")
-    @main.command(CMD_CMD, context_settings={
-        'ignore_unknown_options': True  # Make all unknown options redirect to arguments
-    })
+    @main.command(
+        CMD_CMD,
+        context_settings={
+            "ignore_unknown_options": True  # Make all unknown options redirect to arguments
+        },
+    )
     @click.pass_context
-    @click.argument('command', required=False)
-    @click.argument('arguments', required=False, nargs=-1, type=click.UNPROCESSED)
+    @click.argument("command", required=False)
+    @click.argument("arguments", required=False, nargs=-1, type=click.UNPROCESSED)
     def cmd(ctx, command, arguments):
         """
         Executes a project command.
@@ -351,9 +372,9 @@ def load(main):
     @cli_section("CLI")
     @main.command(CMD_EXEC)
     @click.pass_context
-    @click.option('--root', is_flag=True, default=False, help='Run the shell as the root user instead')
-    @click.option('--command', default=None, help='Run a custom command instead')
-    @click.argument('service', required=False)
+    @click.option("--root", is_flag=True, default=False, help="Run the shell as the root user instead")
+    @click.option("--command", default=None, help="Run a custom command instead")
+    @click.argument("service", required=False)
     def exec_cmd(ctx, service, root, command):
         """
         Opens a shell into a service container.
@@ -373,17 +394,17 @@ def load(main):
         engine: AbstractEngine = ctx.engine
 
         if service is None:
-            if project["app"].get_service_by_role('main') is None:
+            if project["app"].get_service_by_role("main") is None:
                 raise RiptideCliError("Please specify a service", ctx)
-            service = project["app"].get_service_by_role('main')["$name"]
+            service = project["app"].get_service_by_role("main")["$name"]
 
         try:
             cols, lines = os.get_terminal_size()
             if not command:
                 engine.exec(project, service, cols=cols, lines=lines, root=root)
             else:
-                if 'RIPTIDE_DONT_SHOW_EXEC_WARNING' not in os.environ:
-                    warn(f"""Using exec --command is not recommended. Please consider creating a Command object instead.
+                if "RIPTIDE_DONT_SHOW_EXEC_WARNING" not in os.environ:
+                    warn("""Using exec --command is not recommended. Please consider creating a Command object instead.
 
 Please see the documentation for more information. 
 To suppress this warning, set the environment variable RIPTIDE_DONT_SHOW_EXEC_WARNING.""")
@@ -395,8 +416,8 @@ To suppress this warning, set the environment variable RIPTIDE_DONT_SHOW_EXEC_WA
     @cli_section("Project")
     @main.command(CMD_SETUP)
     @click.pass_context
-    @click.option('-f', '--force', is_flag=True, help='Force setup, even if it was already run.')
-    @click.option('-s', '--skip', is_flag=True, help="Mark project as set up, don't ask any interactive questions")
+    @click.option("-f", "--force", is_flag=True, help="Force setup, even if it was already run.")
+    @click.option("-s", "--skip", is_flag=True, help="Mark project as set up, don't ask any interactive questions")
     @async_command()
     async def setup(ctx, force, skip):
         """

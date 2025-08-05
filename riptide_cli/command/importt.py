@@ -13,8 +13,9 @@ from riptide_cli.loader import cmd_constraint_project_loaded, load_riptide_core
 def cmd_constraint_has_import(ctx):
     cmd_constraint_project_loaded(ctx)
     if "import" not in ctx.system_config["project"]["app"]:
-        raise RiptideCliError("The project's app has no import paths defined."
-                              "This is required to use this command.", ctx)
+        raise RiptideCliError(
+            "The project's app has no import paths defined.This is required to use this command.", ctx
+        )
 
 
 def load(main):
@@ -22,11 +23,11 @@ def load(main):
 
     @cli_section("Import")
     @main.command(CMD_IMPORT_DB)
-    @click.argument('file')
+    @click.argument("file")
     @click.pass_context
     @async_command()
     async def db(ctx, file):
-        """ Alias for db:import """
+        """Alias for db:import"""
         load_riptide_core(ctx)
         cmd_constraint_has_db(ctx)
 
@@ -62,7 +63,9 @@ def files_impl(ctx, key, path_to_import):
 
     import_spec = project["app"]["import"][key]
     if os.path.isabs(import_spec["target"]):
-        raise RiptideCliError(f"The import key {key} contains an absolute target path. All target paths must be relative to project", ctx)
+        raise RiptideCliError(
+            f"The import key {key} contains an absolute target path. All target paths must be relative to project", ctx
+        )
 
     destination = os.path.join(project.folder(), import_spec["target"])
     source_is_file = os.path.isfile(path_to_import)
@@ -75,7 +78,7 @@ def files_impl(ctx, key, path_to_import):
 
     echo(f"Importing {key} ({import_spec['target']}) from {path_to_import}")
     echo("Copying... this can take some time...")
-    os.makedirs(os.path.dirname(destination ), exist_ok=True)
+    os.makedirs(os.path.dirname(destination), exist_ok=True)
     try:
         if source_is_file:
             shutil.copy2(path_to_import, destination)

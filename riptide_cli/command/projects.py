@@ -23,7 +23,7 @@ def load(main):
 
     @cli_section("Project")
     @main.command(CMD_PROJECT_REMOVE)
-    @click.argument('project', required=True)
+    @click.argument("project", required=True)
     @click.pass_context
     def remove(ctx, project):
         """
@@ -42,4 +42,3 @@ def load(main):
             raise RiptideCliError(f"Project {project} not found.", ctx)
         remove_project(project)
         click.echo(click.style(f"Project {project} removed."))
-

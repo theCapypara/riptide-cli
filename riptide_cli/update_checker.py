@@ -3,25 +3,24 @@ import os
 import re
 import sys
 import time
-from typing import Optional, Dict
 from urllib import request
 
 from packaging import version
-
 from riptide.config.files import riptide_config_dir
 
 REGEX_VERSION = re.compile(r"__version__\s*=\s*'(.*?)?'")
 
 
-def check_for_update() -> Optional[Dict[str, str]]:
+def check_for_update() -> dict[str, str] | None:
     if sys.version_info < (3, 10):
         return check_for_update_pre310()
 
-    from importlib.metadata import distributions, distribution, Distribution
+    from importlib.metadata import distribution, distributions
+
     # Check cache first
     cache_path = get_version_cache_path()
     try:
-        with open(cache_path, 'r') as f:
+        with open(cache_path) as f:
             doc = json.load(f)
         if doc["time"] + 604_800 > time.time():  # 7 days
             cache_is_valid = True
@@ -40,9 +39,9 @@ def check_for_update() -> Optional[Dict[str, str]]:
     for pkg in distributions():
         if pkg.name.startswith("riptide-"):
             try:
-                repo_url = pkg.metadata['Home-page'].strip()
+                repo_url = pkg.metadata["Home-page"].strip()
                 repo_url = repo_url.replace("github.com", "raw.githubusercontent.com")
-                remote_setuppy = request.urlopen(f"{repo_url}release/setup.py").read().decode('utf-8')
+                remote_setuppy = request.urlopen(f"{repo_url}release/setup.py").read().decode("utf-8")
                 rematch = REGEX_VERSION.match(remote_setuppy.splitlines()[0])
                 if rematch:
                     upstream_version = version.parse(rematch.group(1))
@@ -51,19 +50,20 @@ def check_for_update() -> Optional[Dict[str, str]]:
             except Exception:
                 pass
     try:
-        with open(cache_path, 'w') as f:
-            json.dump({'time': int(time.time()) , 'versions': versions}, f)
+        with open(cache_path, "w") as f:
+            json.dump({"time": int(time.time()), "versions": versions}, f)
     except Exception:
         pass
     return versions
 
 
-def check_for_update_pre310() -> Optional[Dict[str, str]]:
+def check_for_update_pre310() -> dict[str, str] | None:
     import pkg_resources
+
     # Check cache first
     cache_path = get_version_cache_path()
     try:
-        with open(cache_path, 'r') as f:
+        with open(cache_path) as f:
             doc = json.load(f)
         if doc["time"] + 604_800 > time.time():  # 7 days
             cache_is_valid = True
@@ -80,11 +80,11 @@ def check_for_update_pre310() -> Optional[Dict[str, str]]:
 
     versions = {}
     for pkg in pkg_resources.working_set:
-        if pkg.key.startswith('riptide-'):
+        if pkg.key.startswith("riptide-"):
             try:
                 repo_url = _get_repo_url_for_egg_pre310(pkg)
                 repo_url = repo_url.replace("github.com", "raw.githubusercontent.com")
-                remote_setuppy = request.urlopen(f"{repo_url}release/setup.py").read().decode('utf-8')
+                remote_setuppy = request.urlopen(f"{repo_url}release/setup.py").read().decode("utf-8")
                 rematch = REGEX_VERSION.match(remote_setuppy.splitlines()[0])
                 if rematch:
                     upstream_version = version.parse(rematch.group(1))
@@ -93,8 +93,8 @@ def check_for_update_pre310() -> Optional[Dict[str, str]]:
             except Exception:
                 pass
     try:
-        with open(cache_path, 'w') as f:
-            json.dump({'time': int(time.time()), 'versions': versions}, f)
+        with open(cache_path, "w") as f:
+            json.dump({"time": int(time.time()), "versions": versions}, f)
     except Exception:
         pass
     return versions
@@ -104,15 +104,15 @@ def _get_repo_url_for_egg_pre310(pkg):
     # There's no real convenient public API for this, but this shouldn't break anytime soon:
     # noinspection PyProtectedMember
     lines = pkg._get_metadata(pkg.PKG_INFO)
-    version_lines = filter(lambda l: l.lower().startswith('home-page:'), lines)
-    line = next(iter(version_lines), '')
-    _, _, value = line.partition(':')
+    version_lines = filter(lambda verline: verline.lower().startswith("home-page:"), lines)
+    line = next(iter(version_lines), "")
+    _, _, value = line.partition(":")
     return value.strip()
 
 
 def get_version_cache_path():
-    return os.path.join(riptide_config_dir(), 'versions.json')
+    return os.path.join(riptide_config_dir(), "versions.json")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(check_for_update())
