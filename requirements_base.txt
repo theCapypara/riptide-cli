@@ -1,0 +1,9 @@
+Click==8.2.1
+colorama==0.4.6
+click-help-colors==0.9.4
+tqdm==4.67.1
+packaging
+ruff
+mypy
+
+types-tqdm
