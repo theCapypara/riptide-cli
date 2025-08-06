@@ -106,8 +106,8 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
         warn(
             f"A new Riptide version is available:\n"
             f"{new_versions_str}\n\n"
-            f"Use riptide_upgrade to upgrade. You may NEED to use sudo, see:\n"
-            f"    https://riptide-docs.readthedocs.io/en/latest/user_docs/2a_linux.html#updating-riptide\n",
+            f"Please see the documentation for your platform on how to update:\n"
+            f"    https://riptide-docs.readthedocs.io/en/latest/installation.html\n",
             False,
         )
 
