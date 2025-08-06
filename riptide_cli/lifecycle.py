@@ -35,7 +35,8 @@ def _build_progress_bars(services):
             total=1,
             position=i,
             bar_format="{desc}{n_fmt}/{total_fmt}|{bar}| {postfix[0]}",
-            postfix="...".ljust(text_width_right()),
+            # Workaround to bug https://github.com/tqdm/tqdm/issues/712
+            postfix=["...".ljust(text_width_right())],  # type: ignore
         )
         i += 1
         progress_bars[service_name].set_description(service_name.ljust(longest_service_name_len))
