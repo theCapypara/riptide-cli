@@ -20,7 +20,9 @@ def update():
         os.remove(get_version_cache_path())
     except Exception:
         pass
-    print("Update done! Be sure to also update the repositories and images by running riptide update!")
+    print(
+        "Update done! Be sure to restart the proxy server (see documentation) and to update the repositories and images by running riptide update!"
+    )
 
 
 if __name__ == "__main__":
