@@ -27,7 +27,6 @@ from riptide.plugin.loader import load_plugins
 from riptide.util import SystemFlag
 from riptide_cli.click import ClickMainGroup
 from riptide_cli.helpers import RiptideCliError, warn
-from riptide_cli.update_checker import check_for_update
 
 
 def print_version():
@@ -99,17 +98,6 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
 
     if update:
         raise RiptideCliError("--update/-u is deprecated. Please run 'riptide update' instead.", ctx)
-
-    new_versions = check_for_update()
-    if new_versions is not None:
-        new_versions_str = "\n".join([f"    {pkg:<22}: {version}" for pkg, version in new_versions.items()])
-        warn(
-            f"A new Riptide version is available:\n"
-            f"{new_versions_str}\n\n"
-            f"Please see the documentation for your platform on how to update:\n"
-            f"    https://riptide-docs.readthedocs.io/en/latest/installation.html\n",
-            False,
-        )
 
     if "RIPTIDE_SHELL_LOADED" not in os.environ and not ctx.resilient_parsing and not ignore_shell:
         warn("Riptide shell integration not enabled.")

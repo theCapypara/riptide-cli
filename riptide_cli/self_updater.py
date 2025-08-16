@@ -1,10 +1,7 @@
 """Riptide self-updater."""
 
-import os
 import sys
 from subprocess import call
-
-from riptide_cli.update_checker import get_version_cache_path
 
 
 def update():
@@ -16,10 +13,6 @@ def update():
     packages.append("configcrunch")
     call(f"{sys.executable} -m pip install --upgrade " + " ".join(packages), shell=True)
     print()
-    try:
-        os.remove(get_version_cache_path())
-    except Exception:
-        pass
     print(
         "Update done! Be sure to restart the proxy server (see documentation) and to update the repositories and images by running riptide update!"
     )
