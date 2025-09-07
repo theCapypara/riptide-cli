@@ -1,4 +1,5 @@
 import os
+import textwrap
 from collections import OrderedDict
 
 from click import echo, style
@@ -82,7 +83,7 @@ def display_errors(errors, ctx):
         )
         for error in errors:
             echo(TAB + style(error["service"] + ":", bold=True, fg="red"))
-            echo(TAB + style(str(error["error"]), bg="red"))
+            echo(style(textwrap.indent(str(error["error"]), TAB), bg="red"))
             if get_is_verbose(ctx):
                 echo(style(str(error["error_traceback"]), bg="red"))
 
