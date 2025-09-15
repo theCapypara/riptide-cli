@@ -106,7 +106,7 @@ def load_riptide_core(ctx: RiptideCliCtx, allow_heavy_operations=True, *, skip_p
                 raise RiptideCliError("Connection to engine failed.", ctx) from ex
 
             # Load the hook manager
-            ctx.hook_manager = HookManager(ctx.system_config, cli_echo=click.echo, cli_style=click.style)
+            ctx.hook_manager = HookManager(ctx.system_config, ctx.engine, cli_echo=click.echo, cli_style=click.style)
             if allow_heavy_operations:
                 ctx.hook_manager.setup()
 

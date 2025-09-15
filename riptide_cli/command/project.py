@@ -355,17 +355,16 @@ def load(main):
             raise RiptideCliError("Command not found.", ctx)
 
         # check if command is actually an alias
-        command = project["app"]["commands"][command].resolve_alias()["$name"]
-        cmd_obj = project["app"]["commands"][command]
+        command = project["app"]["commands"][command].resolve_alias()
 
         # Run Command
         try:
-            if KEY_IDENTIFIER_IN_SERVICE_COMMAND in cmd_obj:
-                # In Service comamnd
-                sys.exit(in_service.run(engine, project, command, arguments))
+            if KEY_IDENTIFIER_IN_SERVICE_COMMAND in command:
+                # In Service command
+                sys.exit(in_service.run(engine, project, command["$name"], arguments))
             else:
                 # Normal command
-                sys.exit(engine.cmd(project, command, arguments))
+                sys.exit(engine.cmd(command, arguments))
         except (ExecError, ValueError) as err:
             raise RiptideCliError(str(err), ctx) from err
 

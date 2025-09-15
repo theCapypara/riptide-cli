@@ -60,12 +60,11 @@ def run_cmd(command_name, arguments):
     system_config.load_performance_options(engine)
 
     # check if command is actually an alias
-    command_name = system_config["project"]["app"]["commands"][command_name].resolve_alias()["$name"]
-    cmd_obj = system_config["project"]["app"]["commands"][command_name]
+    command = system_config["project"]["app"]["commands"][command_name].resolve_alias()
 
-    if KEY_IDENTIFIER_IN_SERVICE_COMMAND in cmd_obj:
-        # In Service comamnd
-        sys.exit(in_service.run(engine, system_config["project"], command_name, arguments))
+    if KEY_IDENTIFIER_IN_SERVICE_COMMAND in command:
+        # In Service command
+        sys.exit(in_service.run(engine, system_config["project"], command["$name"], arguments))
     else:
-        # Normal comamnd
-        sys.exit(engine.cmd(system_config["project"], command_name, arguments))
+        # Normal command
+        sys.exit(engine.cmd(command, arguments))

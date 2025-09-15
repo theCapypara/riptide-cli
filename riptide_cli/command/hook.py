@@ -1,7 +1,7 @@
-from typing import cast
+from typing import cast, IO, Any
 
 import click
-from click import echo, style
+from click import ClickException, echo, style
 from riptide.hook.event import HookEvent
 from riptide.hook.manager import ApplicableEventConfiguration
 from riptide_cli.command.constants import (
@@ -11,6 +11,15 @@ from riptide_cli.command.constants import (
 )
 from riptide_cli.helpers import TAB, RiptideCliError, cli_section, warn
 from riptide_cli.loader import RiptideCliCtx, load_riptide_core
+
+
+class EmptyClickException(ClickException):
+    def __init__(self, exit_code: int) -> None:
+        self.exit_code = exit_code
+        super().__init__("")
+
+    def show(self, file: IO[Any] | None = None) -> None:
+        pass
 
 
 def load(main):
@@ -145,7 +154,9 @@ def load(main):
         if not c_event:
             raise RiptideCliError(f"Invalid hook name {event}", ctx)
 
-        ctx.hook_manager.trigger_event_on_cli(c_event)
+        ret = ctx.hook_manager.trigger_event_on_cli(c_event)
+        if ret != 0:
+            raise EmptyClickException(ret)
 
 
 def print_hook_status(
