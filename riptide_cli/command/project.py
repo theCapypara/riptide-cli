@@ -331,7 +331,7 @@ def load(main):
 
         When command is not specified, all commands will be listed.
         """
-        load_riptide_core(ctx)
+        load_riptide_core(ctx, False)
         cmd_constraint_project_set_up(ctx)
 
         project = ctx.system_config["project"]

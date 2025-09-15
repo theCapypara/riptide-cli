@@ -13,6 +13,10 @@ CMD_DB_IMPORT = "db-import"
 CMD_DB_STATUS = "db-status"
 CMD_DB_EXPORT = "db-export"
 
+CMD_HOOK_LIST = "hook-configuration"
+CMD_HOOK_CONFIGURE = "hook-configure"
+CMD_HOOK_TRIGGER = "hook-trigger"
+
 CMD_IMPORT_DB = "import-db"
 CMD_IMPORT_FILES = "import-files"
 

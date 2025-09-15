@@ -1,8 +1,11 @@
 import os
 import warnings
+from typing import cast
 
 import click
-from click import echo
+from click import echo, Context
+
+from riptide_cli.loader import RiptideCliCtx
 
 if __name__ == "__main__":
     warnings.simplefilter("ignore", DeprecationWarning)
@@ -19,6 +22,7 @@ if __name__ == "__main__":
 
 import riptide_cli.command.config
 import riptide_cli.command.db
+import riptide_cli.command.hook
 import riptide_cli.command.importt
 import riptide_cli.command.project
 import riptide_cli.command.projects
@@ -71,7 +75,16 @@ def print_version():
     help="Update repositories and pull images before executing the command.",
 )
 @click.pass_context
-def cli(ctx, version=False, update=False, ignore_shell=False, project=None, project_file=None, verbose=False, **kwargs):
+def cli(
+    ctx: Context,
+    version=False,
+    update=False,
+    ignore_shell=False,
+    project=None,
+    project_file=None,
+    verbose=False,
+    **kwargs,
+):
     """
     Define development environments for web applications.
     See full documentation at: https://riptide-docs.readthedocs.io/en/latest/
@@ -83,6 +96,7 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
         print_version()
         exit()
 
+    ctx = cast(RiptideCliCtx, ctx)
     ctx.riptide_options = {"verbose": verbose}
 
     # Don't allow running as root.
@@ -116,12 +130,13 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
 
     # Setup basic variables
     ctx.riptide_options = {"project": project_file, "verbose": verbose, "rename": False}
-    ctx.riptide_options.update(kwargs)
+    ctx.riptide_options.update(kwargs)  # type: ignore
 
 
 # Load sub commands
 riptide_cli.command.config.load(cli)
 riptide_cli.command.db.load(cli)
+riptide_cli.command.hook.load(cli)
 riptide_cli.command.importt.load(cli)
 riptide_cli.command.project.load(cli)
 riptide_cli.command.projects.load(cli)
