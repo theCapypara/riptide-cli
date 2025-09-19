@@ -3,10 +3,12 @@ import shutil
 
 import click
 from click import echo
-
+from riptide.hook.additional_volumes import HookHostPathArgument
+from riptide.hook.event import HookEvent
 from riptide_cli.command.constants import CMD_IMPORT_DB, CMD_IMPORT_FILES
-from riptide_cli.command.db import importt_impl, cmd_constraint_has_db
-from riptide_cli.helpers import cli_section, async_command, RiptideCliError
+from riptide_cli.command.db import cmd_constraint_has_db, importt_impl
+from riptide_cli.helpers import RiptideCliError, async_command, cli_section
+from riptide_cli.hook import trigger_and_handle_hook
 from riptide_cli.loader import cmd_constraint_project_loaded, load_riptide_core
 
 
@@ -76,6 +78,8 @@ def files_impl(ctx, key, path_to_import):
     if source_is_file and os.path.exists(destination):  # implict: target is directory
         raise RiptideCliError("The target is a diretory, but the path to import points to a file. Can't continue.", ctx)
 
+    trigger_and_handle_hook(ctx, HookEvent.PreFileImport, [key, HookHostPathArgument(path_to_import)])
+
     echo(f"Importing {key} ({import_spec['target']}) from {path_to_import}")
     echo("Copying... this can take some time...")
     os.makedirs(os.path.dirname(destination), exist_ok=True)
@@ -84,6 +88,8 @@ def files_impl(ctx, key, path_to_import):
             shutil.copy2(path_to_import, destination)
         else:
             shutil.copytree(path_to_import, destination, dirs_exist_ok=True)
+
+        trigger_and_handle_hook(ctx, HookEvent.PostFileImport, [key, HookHostPathArgument(path_to_import)])
     except Exception as ex:
         raise RiptideCliError("Error while copying", ctx) from ex
 

@@ -3,8 +3,10 @@ import textwrap
 from collections import OrderedDict
 
 from click import echo, style
-from riptide.engine.status import status_for
-from riptide_cli.helpers import TAB, RiptideCliError, get_is_verbose
+from riptide.engine.status import StatusResult, status_for
+from riptide.hook.event import HookEvent
+from riptide_cli.helpers import TAB, RiptideCliError, get_is_verbose, header
+from riptide_cli.hook import trigger_and_handle_hook
 from tqdm import tqdm
 
 
@@ -100,8 +102,10 @@ async def start_project(ctx, services: list[str], show_status=True, quick=False,
     if len(services) < 1:
         return
 
-    echo("Starting services...")
+    echo(header("Starting services..."))
     echo()
+
+    trigger_and_handle_hook(ctx, HookEvent.PreStart, [",".join(services)])
 
     ctx.progress_bars = _build_progress_bars(services)
     ctx.start_stop_errors = []
@@ -120,8 +124,15 @@ async def start_project(ctx, services: list[str], show_status=True, quick=False,
 
     display_errors(ctx.start_stop_errors, ctx)
 
+    status = status_for(project, engine, ctx.system_config)
+    trigger_and_handle_hook(
+        ctx,
+        HookEvent.PostStart,
+        [",".join((svc for svc, status_item in status.items() if status_item.running and svc in services))],
+    )
+
     if show_status:
-        status_project(ctx)
+        status_project(ctx, status_items=status)
 
 
 async def stop_project(ctx, services: list[str], show_status=True):
@@ -135,8 +146,10 @@ async def stop_project(ctx, services: list[str], show_status=True):
     if len(services) < 1:
         return
 
-    echo("Stopping services...")
+    echo(header("Stopping services..."))
     echo()
+
+    trigger_and_handle_hook(ctx, HookEvent.PreStart, [",".join(services)])
 
     ctx.progress_bars = _build_progress_bars(services)
     ctx.start_stop_errors = []
@@ -153,36 +166,49 @@ async def stop_project(ctx, services: list[str], show_status=True):
 
     display_errors(ctx.start_stop_errors, ctx)
 
+    status = status_for(project, engine, ctx.system_config)
+    trigger_and_handle_hook(
+        ctx,
+        HookEvent.PostStart,
+        [",".join((svc for svc, status_item in status.items() if not status_item.running))],
+    )
+
     if show_status:
-        status_project(ctx)
+        status_project(ctx, status_items=status)
 
 
-def status_project(ctx, limit_services=None):
+def status_project(ctx, limit_services=None, *, status_items: dict[str, StatusResult] | None = None):
     """
     Shows the status of Riptide and the loaded project (if any) by collecting data from the engine.
     :type limit_services: None or List that includes names of services to show status for
+    :type status_items: Status items to display. If set, these are used,
+                        otherwise the status is determined from the configuration and engine.
 
     """
-    echo("Status:")
+    echo(header("Status:"))
     engine = ctx.engine
     system_config = ctx.system_config
     project = None
-    if system_config is None:
-        echo(TAB + style("No system configuration found.", fg="yellow"))
-    elif "project" in system_config:
-        project = system_config["project"]
-    if project is None:
-        echo(TAB + style("No project found.", fg="yellow"))
-        return
-    if not ctx.project_is_set_up:
-        echo(TAB + style("Project is not yet set up. Run the setup command.", fg="yellow"))
-        return
-    else:
-        status_items = status_for(project, engine, ctx.system_config).items()
+
+    if status_items is None:
+        if system_config is None:
+            echo(TAB + style("No system configuration found.", fg="yellow"))
+        elif "project" in system_config:
+            project = system_config["project"]
+        if project is None:
+            echo(TAB + style("No project found.", fg="yellow"))
+            return
+        if not ctx.project_is_set_up:
+            echo(TAB + style("Project is not yet set up. Run the setup command.", fg="yellow"))
+            return
+        else:
+            status_items = status_for(project, engine, ctx.system_config)
+
+    if status_items is not None:
         if len(status_items) < 1:
             echo(TAB + "Project loaded, but it contains no services.")
 
-        for name, status in status_items:
+        for name, status in status_items.items():
             if limit_services and name not in limit_services:
                 continue
             echo(TAB + style(name + ":", fg="green" if status.running else "red", bold=True))

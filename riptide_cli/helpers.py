@@ -91,9 +91,9 @@ def async_command(interrupt_handler=lambda _, __: True):
     return decorator
 
 
-def header(msg, bold=False):
+def header(msg, highlight=False):
     """Uniform header style"""
-    return style(msg, bg="cyan", fg="white", bold=bold)
+    return style(msg, fg="cyan", bold=highlight)
 
 
 TAB = "    "

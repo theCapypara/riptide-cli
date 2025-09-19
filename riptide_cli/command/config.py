@@ -1,25 +1,27 @@
-import click
 import os.path
-import yaml
-from click import echo, style
 from shutil import copyfile
 
+import click
+import yaml
+from click import echo, style
 from riptide.config import repositories
+from riptide.config.files import (
+    RIPTIDE_PROJECT_CONFIG_NAME,
+    riptide_assets_dir,
+    riptide_config_dir,
+    riptide_main_config_file,
+)
+from riptide.hook.event import HookEvent
 from riptide_cli.command.constants import (
     CMD_CONFIG_DUMP,
-    CMD_CONFIG_GET,
-    CMD_CONFIG_EDIT_USER,
     CMD_CONFIG_EDIT_PROJECT,
+    CMD_CONFIG_EDIT_USER,
+    CMD_CONFIG_GET,
     CMD_UPDATE,
 )
-from riptide_cli.helpers import cli_section, header, RiptideCliError, TAB
-from riptide.config.files import (
-    riptide_assets_dir,
-    riptide_main_config_file,
-    riptide_config_dir,
-    RIPTIDE_PROJECT_CONFIG_NAME,
-)
-from riptide_cli.loader import load_riptide_system_config, load_riptide_core
+from riptide_cli.helpers import TAB, RiptideCliError, cli_section, header
+from riptide_cli.hook import trigger_and_handle_hook
+from riptide_cli.loader import load_riptide_core, load_riptide_system_config
 
 
 def load(main):
@@ -118,6 +120,8 @@ def load(main):
                 )
             except Exception as ex:
                 raise RiptideCliError("Error updating an image", ctx) from ex
+
+        trigger_and_handle_hook(ctx, HookEvent.PostUpdate, [], nl=False)
 
 
 def _filter_config_dict_recursive_key(final_dict):

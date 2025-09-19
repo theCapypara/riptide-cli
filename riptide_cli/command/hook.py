@@ -1,7 +1,9 @@
-from typing import IO, Any, Sequence, cast
+import os.path
+from typing import Sequence, cast
 
 import click
-from click import ClickException, echo, style
+from click import echo, style
+from riptide.hook.additional_volumes import HookHostPathArgument
 from riptide.hook.event import HookEvent
 from riptide.hook.manager import ApplicableEventConfiguration
 from riptide_cli.command.constants import (
@@ -10,17 +12,9 @@ from riptide_cli.command.constants import (
     CMD_HOOK_TRIGGER,
 )
 from riptide_cli.helpers import TAB, RiptideCliError, cli_section, warn
+from riptide_cli.hook import trigger_and_handle_hook
 from riptide_cli.loader import RiptideCliCtx, load_riptide_core
 from setproctitle import setproctitle
-
-
-class EmptyClickException(ClickException):
-    def __init__(self, exit_code: int) -> None:
-        self.exit_code = exit_code
-        super().__init__("")
-
-    def show(self, file: IO[Any] | None = None) -> None:
-        pass
 
 
 def load(main):
@@ -142,11 +136,23 @@ def load(main):
             print_hook_status(defaults, not default, None)
 
     @cli_section("Hook")
-    @main.command(CMD_HOOK_TRIGGER)
+    @main.command(
+        CMD_HOOK_TRIGGER,
+        context_settings={
+            "ignore_unknown_options": True  # Make all unknown options redirect to arguments
+        },
+    )
+    @click.option(
+        "--mount-host-paths",
+        "-m",
+        required=False,
+        is_flag=True,
+        help="If set, any passed argument that looks like an absolute or relative path is mounted into command containers.",
+    )
     @click.argument("event", required=True)
     @click.argument("arguments", required=False, nargs=-1, type=click.UNPROCESSED)
     @click.pass_context
-    def trigger(ctx, event: str, arguments: Sequence[str]):
+    def trigger(ctx, mount_host_paths: bool, event: str, arguments: Sequence[str]):
         """Trigger an event and all its hooks (if enabled). All additional arguments are passed to the hooks."""
         ctx = cast(RiptideCliCtx, ctx)
         load_riptide_core(ctx, False)
@@ -160,9 +166,20 @@ def load(main):
             setproctitle("riptide-hook-trigger")
         except:
             pass
-        ret = ctx.hook_manager.trigger_event_on_cli(c_event, arguments)
-        if ret != 0:
-            raise EmptyClickException(ret)
+
+        if mount_host_paths:
+            new_arguments = []
+            for arg in arguments:
+                if arg.startswith("/") or arg.startswith("./"):
+                    try:
+                        if os.path.exists(arg):
+                            new_arguments.append(HookHostPathArgument(arg))
+                    except OSError:
+                        pass
+                new_arguments.append(arg)
+            arguments = new_arguments
+
+        trigger_and_handle_hook(ctx, c_event, arguments, show_error_msg=False, nl=False, cli_hook_prefix="Riptide")
 
 
 def print_hook_status(

@@ -5,9 +5,11 @@ from click import echo, getchar, style
 from riptide.config.files import get_project_setup_flag_path
 from riptide.db.driver import db_driver_for_service
 from riptide.db.environments import DbEnvironments
+from riptide.hook.event import HookEvent
 from riptide_cli.command.db import importt_impl
 from riptide_cli.command.importt import files_impl
 from riptide_cli.helpers import TAB, RiptideCliError, header
+from riptide_cli.hook import trigger_and_handle_hook
 
 CMD_SEP = style("-----", fg="cyan")
 
@@ -72,7 +74,7 @@ async def setup_assistant(ctx, force, skip):
             echo()
             echo(style("Installation instructions:", bold=True))
             echo(TAB + TAB.join(project["app"]["notices"]["installation"].splitlines(True)))
-            finish(ctx)
+            finish(ctx, True)
             return
 
     # Existing project
@@ -157,13 +159,14 @@ async def setup_assistant(ctx, force, skip):
             else:
                 echo()
     echo()
-    echo(header("> IMPORT DONE!", bold=True))
+    echo(header("> IMPORT DONE!", highlight=True))
     echo("All files were imported.")
-    finish(ctx)
+    finish(ctx, False)
 
 
-def finish(ctx):
+def finish(ctx, was_new_project: bool):
     echo()
+    trigger_and_handle_hook(ctx, HookEvent.PostSetup, ["new-project" if was_new_project else "existing-project"])
     echo(style("DONE!", bold=True))
     echo()
     echo(
