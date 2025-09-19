@@ -1,4 +1,4 @@
-from typing import cast, IO, Any
+from typing import IO, Any, Sequence, cast
 
 import click
 from click import ClickException, echo, style
@@ -78,19 +78,19 @@ def load(main):
     )
     @click.option("--enable", required=False, type=bool, help="Enable or disable event")
     @click.option(
-        "--wait-timeout",
+        "--wait-time",
         required=False,
         type=int,
-        help="Configure the wait timeout. Riptide will wait for this amount of time before running hooks and allows you to interrupt. Set to 0 to disable.",
+        help="Configure the wait time. Riptide will wait for this amount of time before running hooks and allows you to interrupt. Set to 0 to disable.",
     )
     @click.argument("event_name", required=False)
     @click.pass_context
-    def configure(ctx, default: bool, event_name: str | None, enable: int | None, wait_timeout: int | None):
+    def configure(ctx, default: bool, event_name: str | None, enable: int | None, wait_time: int | None):
         """
         Configure hooks. This can be done on a per-event basis, or you can change the global defaults. Likewise, you
         can change the settings for this project or the default across all projects.
 
-        Hooks for events can be disabled or enabled and wait timeouts can be configured.
+        Hooks for events can be disabled or enabled and wait times can be configured.
 
         Examples:
 
@@ -125,10 +125,10 @@ def load(main):
             if not c_event:
                 raise RiptideCliError(f"Invalid hook name {event_name}", ctx)
 
-        if enable is None and wait_timeout is None:
-            raise RiptideCliError("Please specify either --enable, --wait-timeout or both.", ctx)
+        if enable is None and wait_time is None:
+            raise RiptideCliError("Please specify either --enable, --wait-time or both.", ctx)
 
-        ctx.hook_manager.configure_event(c_event, default, enable, wait_timeout)
+        ctx.hook_manager.configure_event(c_event, default, enable, wait_time)
 
         (defaults, events) = ctx.hook_manager.get_current_configuration()
 
@@ -143,8 +143,9 @@ def load(main):
     @cli_section("Hook")
     @main.command(CMD_HOOK_TRIGGER)
     @click.argument("event", required=True)
+    @click.argument("arguments", required=False, nargs=-1, type=click.UNPROCESSED)
     @click.pass_context
-    def trigger(ctx, event):
+    def trigger(ctx, event: str, arguments: Sequence[str]):
         """Trigger an event and all its hooks (if enabled). All additional arguments are passed to the hooks."""
         ctx = cast(RiptideCliCtx, ctx)
         load_riptide_core(ctx, False)
@@ -154,7 +155,7 @@ def load(main):
         if not c_event:
             raise RiptideCliError(f"Invalid hook name {event}", ctx)
 
-        ret = ctx.hook_manager.trigger_event_on_cli(c_event)
+        ret = ctx.hook_manager.trigger_event_on_cli(c_event, arguments)
         if ret != 0:
             raise EmptyClickException(ret)
 
