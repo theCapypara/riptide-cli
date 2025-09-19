@@ -11,6 +11,7 @@ from riptide_cli.command.constants import (
 )
 from riptide_cli.helpers import TAB, RiptideCliError, cli_section, warn
 from riptide_cli.loader import RiptideCliCtx, load_riptide_core
+from setproctitle import setproctitle
 
 
 class EmptyClickException(ClickException):
@@ -155,6 +156,10 @@ def load(main):
         if not c_event:
             raise RiptideCliError(f"Invalid hook name {event}", ctx)
 
+        try:
+            setproctitle("riptide-hook-trigger")
+        except:
+            pass
         ret = ctx.hook_manager.trigger_event_on_cli(c_event, arguments)
         if ret != 0:
             raise EmptyClickException(ret)

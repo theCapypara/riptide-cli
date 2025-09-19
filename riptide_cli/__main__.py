@@ -3,9 +3,9 @@ import warnings
 from typing import cast
 
 import click
-from click import echo, Context
-
+from click import Context, echo
 from riptide_cli.loader import RiptideCliCtx
+from setproctitle import setproctitle
 
 if __name__ == "__main__":
     warnings.simplefilter("ignore", DeprecationWarning)
@@ -90,6 +90,11 @@ def cli(
     See full documentation at: https://riptide-docs.readthedocs.io/en/latest/
     """
     SystemFlag.IS_CLI = True
+
+    try:
+        setproctitle("riptide")
+    except:
+        pass
 
     # Print version if requested
     if version:

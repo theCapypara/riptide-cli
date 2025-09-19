@@ -29,6 +29,7 @@ from riptide_cli.helpers import (
 from riptide_cli.lifecycle import start_project, status_project, stop_project
 from riptide_cli.loader import cmd_constraint_project_loaded, load_riptide_core
 from riptide_cli.setup_assistant import setup_assistant
+from setproctitle import setproctitle
 
 
 def cmd_constraint_project_set_up(ctx):
@@ -358,6 +359,10 @@ def load(main):
         command = project["app"]["commands"][command].resolve_alias()
 
         # Run Command
+        try:
+            setproctitle(command["$name"])
+        except:
+            pass
         try:
             if KEY_IDENTIFIER_IN_SERVICE_COMMAND in command:
                 # In Service command

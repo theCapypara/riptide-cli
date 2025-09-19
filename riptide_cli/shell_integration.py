@@ -8,6 +8,7 @@ from riptide.config.document.config import Config
 from riptide.config.files import get_project_meta_folder
 from riptide.config.loader import load_config
 from riptide.engine.loader import load_engine
+from setproctitle import setproctitle
 
 
 def update_shell_integration(system_config: Config):
@@ -62,6 +63,10 @@ def run_cmd(command_name, arguments):
     # check if command is actually an alias
     command = system_config["project"]["app"]["commands"][command_name].resolve_alias()
 
+    try:
+        setproctitle(command["$name"])
+    except:
+        pass
     if KEY_IDENTIFIER_IN_SERVICE_COMMAND in command:
         # In Service command
         sys.exit(in_service.run(engine, system_config["project"], command["$name"], arguments))
