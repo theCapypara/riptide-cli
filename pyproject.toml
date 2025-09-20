@@ -28,7 +28,7 @@ dependencies = [
     "colorama >= 0.4",
     "click-help-colors >= 0.5",
     "tqdm >= 4.67",
-    "setproctitle >= 1.37",
+    "setproctitle >= 1.3.7",
     "packaging"
 ]
 
