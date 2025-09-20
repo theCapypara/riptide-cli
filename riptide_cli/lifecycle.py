@@ -149,7 +149,7 @@ async def stop_project(ctx, services: list[str], show_status=True):
     echo(header("Stopping services..."))
     echo()
 
-    trigger_and_handle_hook(ctx, HookEvent.PreStart, [",".join(services)])
+    trigger_and_handle_hook(ctx, HookEvent.PreStop, [",".join(services)])
 
     ctx.progress_bars = _build_progress_bars(services)
     ctx.start_stop_errors = []
@@ -169,7 +169,7 @@ async def stop_project(ctx, services: list[str], show_status=True):
     status = status_for(project, engine, ctx.system_config)
     trigger_and_handle_hook(
         ctx,
-        HookEvent.PostStart,
+        HookEvent.PostStop,
         [",".join((svc for svc, status_item in status.items() if not status_item.running))],
     )
 

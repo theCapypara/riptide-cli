@@ -1,11 +1,11 @@
 import os.path
-from typing import Sequence, cast
+from typing import cast
 
 import click
 from click import echo, style
 from riptide.hook.additional_volumes import HookHostPathArgument
 from riptide.hook.event import HookEvent
-from riptide.hook.manager import ApplicableEventConfiguration
+from riptide.hook.manager import ApplicableEventConfiguration, HookArgument
 from riptide_cli.command.constants import (
     CMD_HOOK_CONFIGURE,
     CMD_HOOK_LIST,
@@ -152,7 +152,7 @@ def load(main):
     @click.argument("event", required=True)
     @click.argument("arguments", required=False, nargs=-1, type=click.UNPROCESSED)
     @click.pass_context
-    def trigger(ctx, mount_host_paths: bool, event: str, arguments: Sequence[str]):
+    def trigger(ctx, mount_host_paths: bool, event: str, arguments: list[str]):
         """Trigger an event and all its hooks (if enabled). All additional arguments are passed to the hooks."""
         ctx = cast(RiptideCliCtx, ctx)
         load_riptide_core(ctx, False)
@@ -164,11 +164,11 @@ def load(main):
 
         try:
             setproctitle("riptide-hook-trigger")
-        except:
+        except Exception:
             pass
 
         if mount_host_paths:
-            new_arguments = []
+            new_arguments: list[HookArgument] = []
             for arg in arguments:
                 if arg.startswith("/") or arg.startswith("./"):
                     try:
@@ -177,9 +177,10 @@ def load(main):
                     except OSError:
                         pass
                 new_arguments.append(arg)
-            arguments = new_arguments
+        else:
+            new_arguments = arguments  # type: ignore
 
-        trigger_and_handle_hook(ctx, c_event, arguments, show_error_msg=False, nl=False, cli_hook_prefix="Riptide")
+        trigger_and_handle_hook(ctx, c_event, new_arguments, show_error_msg=False, nl=False, cli_hook_prefix="Riptide")
 
 
 def print_hook_status(

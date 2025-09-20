@@ -65,7 +65,7 @@ def run_cmd(command_name, arguments):
 
     try:
         setproctitle(command["$name"])
-    except:
+    except Exception:
         pass
     if KEY_IDENTIFIER_IN_SERVICE_COMMAND in command:
         # In Service command

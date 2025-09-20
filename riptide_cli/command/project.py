@@ -361,7 +361,7 @@ def load(main):
         # Run Command
         try:
             setproctitle(command["$name"])
-        except:
+        except Exception:
             pass
         try:
             if KEY_IDENTIFIER_IN_SERVICE_COMMAND in command:

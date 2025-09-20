@@ -25,7 +25,7 @@ async def setup_assistant(ctx, force, skip):
 
     if skip:
         echo("Project was marked as set up.")
-        finish(ctx)
+        finish(ctx, None)
         return
 
     echo(style("Thank you for using Riptide!", fg="cyan", bold=True))
@@ -48,7 +48,7 @@ async def setup_assistant(ctx, force, skip):
         echo()
         echo(header("> END SETUP"))
         echo("Okay! To re-run this setup, pass the --force option.")
-        finish(ctx)
+        finish(ctx, False)
         return
     echo()
     echo()
@@ -88,7 +88,7 @@ async def setup_assistant(ctx, force, skip):
     if not db_can_be_imported and not files_can_be_imported:
         # Nothing to import
         echo(f"The app {project['app']['name']} does not specify a database or files to import. You are already done!")
-        finish(ctx)
+        finish(ctx, False)
         return
 
     # Import db
@@ -164,9 +164,10 @@ async def setup_assistant(ctx, force, skip):
     finish(ctx, False)
 
 
-def finish(ctx, was_new_project: bool):
+def finish(ctx, was_new_project: bool | None):
     echo()
-    trigger_and_handle_hook(ctx, HookEvent.PostSetup, ["new-project" if was_new_project else "existing-project"])
+    if was_new_project is not None:
+        trigger_and_handle_hook(ctx, HookEvent.PostSetup, ["new-project" if was_new_project else "existing-project"])
     echo(style("DONE!", bold=True))
     echo()
     echo(

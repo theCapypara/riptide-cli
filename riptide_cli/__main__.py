@@ -93,7 +93,7 @@ def cli(
 
     try:
         setproctitle("riptide")
-    except:
+    except Exception:
         pass
 
     # Print version if requested

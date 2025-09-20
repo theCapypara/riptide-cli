@@ -31,11 +31,11 @@ def trigger_and_handle_hook(
     ret = ctx.hook_manager.trigger_event_on_cli(
         c_event, arguments, additional_host_mounts, cli_hook_prefix=cli_hook_prefix
     )
-    if ret != 0:
+    if ret > 0:
         if show_error_msg:
             exc = ClickException("A hook failed")
             exc.exit_code = ret
             raise exc
         raise EmptyClickException(ret)
-    if nl:
+    if nl and ret != -1:
         echo()
