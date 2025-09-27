@@ -1,20 +1,24 @@
 import os
-from sys import stdin
 
-from click import echo, getchar, style
+from rich.console import Group, RenderableType
+from rich.markup import escape
+from rich.panel import Panel
+from rich.prompt import Confirm, Prompt
+from rich.text import Text
+from riptide.config.document.project import Project
 from riptide.config.files import get_project_setup_flag_path
 from riptide.db.driver import db_driver_for_service
 from riptide.db.environments import DbEnvironments
 from riptide.hook.event import HookEvent
 from riptide_cli.command.db import importt_impl
 from riptide_cli.command.importt import files_impl
-from riptide_cli.helpers import TAB, RiptideCliError, header
+from riptide_cli.helpers import RiptideCliError, rule
 from riptide_cli.hook import trigger_and_handle_hook
+from riptide_cli.loader import RiptideCliCtx
 
-CMD_SEP = style("-----", fg="cyan")
 
-
-async def setup_assistant(ctx, force, skip):
+async def setup_assistant(ctx: RiptideCliCtx, force: bool, skip: bool):
+    assert ctx.system_config is not None
     project = ctx.system_config["project"]
     engine = ctx.engine
 
@@ -24,71 +28,75 @@ async def setup_assistant(ctx, force, skip):
         )
 
     if skip:
-        echo("Project was marked as set up.")
-        finish(ctx, None)
+        ctx.console.print("Project was marked as set up.")
+        finish(ctx, project, None)
         return
 
-    echo(style("Thank you for using Riptide!", fg="cyan", bold=True))
-    echo(f"This command will guide you through the initial setup for {project['name']}.")
-    echo(style("Please follow it very carefully, it won't take long!", bold=True))
-    echo(style("> Press any key to continue...", fg="magenta"))
-    getchar()
-    echo()
-    echo(header("> BEGIN SETUP"))
-    if "notices" in project["app"] and "usage" in project["app"]["notices"]:
-        echo()
-        echo(style(f"Usage notes for running {project['app']['name']}", bold=True) + " with Riptide:")
-        echo(TAB + TAB.join(project["app"]["notices"]["usage"].splitlines(True)))
-    echo()
+    panel = Panel(
+        (
+            "Thank you for using Riptide!\n"
+            f"This command will guide you through the initial setup for '{project['name']}'.\n"
+            "Please follow the instructions carefully, it won't take long!"
+        ),
+        title="[bold]:water_wave: Welcome!",
+        border_style="cyan",
+        title_align="left",
+    )
+    ctx.console.print(panel)
+    run_setup = Confirm.ask("[magenta]> Do you wish to run this interactive setup?", default="y", console=ctx.console)
 
-    # Q1
-    echo(style("> Do you wish to run this interactive setup? [Y/n] ", fg="magenta"), nl=False)
-    if getchar(True).lower() == "n":
-        echo()
-        echo()
-        echo(header("> END SETUP"))
-        echo("Okay! To re-run this setup, pass the --force option.")
-        finish(ctx, False)
+    # Q1: Run?
+    if not run_setup:
+        ctx.console.print("Okay! To re-run this setup, pass the --force option.")
+        finish(ctx, project, False)
         return
-    echo()
-    echo()
-    echo(header("> INTERACTIVE SETUP"))
 
     # Q2: New or existing?
-    echo(
-        style("> Are you working on a ", fg="magenta")
-        + style("n", bold=True, fg="cyan")
-        + style("ew project that needs to be installed or do you want to ", fg="magenta")
-        + style("I", bold=True, fg="cyan")
-        + style("mport existing data? [n/I] ", fg="magenta"),
-        nl=False,
+    choice_import = Prompt.ask(
+        "[magenta]> Are you working on a [bold underline]n[/]ew project that needs to be installed, "
+        "or do you want to [bold underline]i[/]mport existing data?",
+        choices=["n", "i"],
+        default="i",
+        console=ctx.console,
     )
-    if getchar(True).lower() == "n":
+
+    if choice_import == "n":
         # New project
+        rule(ctx.console, "# Setting up a new project", characters="=", style="default")
         if "notices" in project["app"] and "installation" in project["app"]["notices"]:
-            echo()
-            echo()
-            echo(header("> NEW PROJECT"))
-            echo("Okay! Riptide can't guide you through the installation automatically.")
-            echo(f"Please read these notes on how to run a first-time-installation for {project['app']['name']}.")
-            echo()
-            echo(style("Installation instructions:", bold=True))
-            echo(TAB + TAB.join(project["app"]["notices"]["installation"].splitlines(True)))
-            finish(ctx, True)
-            return
+            ctx.console.print(
+                f"Please read the following notes on how to run a first-time-installation "
+                f"for '{project['app']['name']}'."
+            )
+            ctx.console.print(
+                Panel(
+                    escape(project["app"]["notices"]["installation"]),
+                    title="Installation instructions",
+                    title_align="left",
+                )
+            )
+        else:
+            ctx.console.print(
+                "This project unfortunately does not provide any information on how to set it up. "
+                "You can try checking the README for more information."
+            )
+        ctx.console.input("[magenta]> Press ENTER to continue...")
+        finish(ctx, project, True)
+        return
 
     # Existing project
-    echo()
-    echo()
-    echo(header("> EXISTING PROJECT"))
+    rule(ctx.console, "# Setting up an existing project", characters="=", style="default")
 
     db_can_be_imported = DbEnvironments.has_db(project)
     files_can_be_imported = "import" in project["app"]
 
     if not db_can_be_imported and not files_can_be_imported:
         # Nothing to import
-        echo(f"The app {project['app']['name']} does not specify a database or files to import. You are already done!")
-        finish(ctx, False)
+        ctx.console.print(
+            f"The app '{project['app']['name']}' does not specify a database or files to import. You are already done!"
+        )
+        ctx.console.input("[magenta]> Press ENTER to continue...")
+        finish(ctx, project, False)
         return
 
     # Import db
@@ -97,94 +105,106 @@ async def setup_assistant(ctx, force, skip):
         assert dbenv.db_service is not None
         db_driver = db_driver_for_service.get(dbenv.db_service)
         assert db_driver is not None  # todo: error handling
-        echo(TAB + header("> DATABASE IMPORT"))
-        echo(
-            style(
-                f"> Do you want to import a database (format {dbenv.db_service['driver']['name']})? [Y/n] ",
-                fg="magenta",
-            ),
-            nl=False,
+        rule(ctx.console, "## Importing a database", style="default")
+        choice = Confirm.ask(
+            f"[magenta]> Do you want to import a database (format {dbenv.db_service['driver']['name']})?",
+            console=ctx.console,
         )
-        if getchar(True).lower() != "n":
+        if choice:
             # Import db
-            echo()
             exit_cmd = False
             while not exit_cmd:
-                echo(db_driver.ask_for_import_file() + " ", nl=False)
-                path = stdin.readline().rstrip("\r\n")
+                prompt = db_driver.ask_for_import_file().rstrip()
+                if prompt.endswith("."):
+                    prompt = prompt[:-1] + ":"
+                path = ctx.console.input(Text("> " + escape(prompt + " "), style="magenta"))
                 try:
-                    echo(CMD_SEP)
                     await importt_impl(ctx, path)
                     exit_cmd = True
-                    echo(CMD_SEP)
                 except RiptideCliError as err:
-                    echo("Error: " + style(str(err), fg="red"))
-                    echo(CMD_SEP)
-                    echo(style("> Do you want to try again? [y/N] ", fg="magenta"), nl=False)
-                    if getchar(True).lower() != "y":
+                    ctx.console.print("[white on red]Error: " + str(err))
+                    try_again = Confirm.ask("[magenta]> Do you want to try again?", console=ctx.console)
+                    if not try_again:
                         exit_cmd = True
-                    echo()
 
         else:
-            echo()
-            echo("Skipping database import. If you change your mind, run db:import.")
+            ctx.console.print("Skipping database import. If you change your mind, run [bold]riptide db:import[/].")
 
     if files_can_be_imported:
-        echo(TAB + header("> FILE IMPORT"))
+        rule(ctx.console, "## Importing files", style="default")
         for key, entry in project["app"]["import"].items():
-            echo(TAB + TAB + header(f"> {key} IMPORT"))
-            echo(
-                style(f"> Do you wish to import {entry['name']} to <project>/{entry['target']}? [Y/n] ", fg="magenta"),
-                nl=False,
+            run_import = Confirm.ask(
+                f"[magenta]> Do you want to import the file or directory labeled '{entry['name']}' "
+                f"to <project>/{entry['target']}?"
             )
-            if getchar(True).lower() != "n":
+            if run_import:
                 # Import files
-                echo()
                 exit_cmd = False
                 while not exit_cmd:
-                    echo("Enter path of files or directory to copy: ", nl=False)
-                    path = stdin.readline().rstrip("\r\n")
+                    path = ctx.console.input(
+                        Text("> " + escape("Enter path of files or directory to copy: "), style="magenta")
+                    )
                     try:
-                        echo(CMD_SEP)
                         files_impl(ctx, key, path)
                         exit_cmd = True
-                        echo(CMD_SEP)
                     except RiptideCliError as err:
-                        echo("Error: " + style(str(err), fg="red"))
-                        echo(CMD_SEP)
-                        echo(style("> Do you want to try again? [y/N] ", fg="magenta"), nl=False)
-                        if getchar(True).lower() != "y":
+                        ctx.console.print("[white on red]Error: " + str(err))
+                        try_again = Confirm.ask("[magenta]> Do you want to try again?", console=ctx.console)
+                        if not try_again:
                             exit_cmd = True
-                        echo()
-            else:
-                echo()
-    echo()
-    echo(header("> IMPORT DONE!", highlight=True))
-    echo("All files were imported.")
-    finish(ctx, False)
+
+    ctx.console.print()
+    ctx.console.print("Done importing files.")
+    ctx.console.input("[magenta]> Press ENTER to continue...")
+    finish(ctx, project, False)
 
 
-def finish(ctx, was_new_project: bool | None):
-    echo()
+def finish(ctx: RiptideCliCtx, project: Project, was_new_project: bool | None):
+    assert ctx.system_config is not None
+
     if was_new_project is not None:
         trigger_and_handle_hook(ctx, HookEvent.PostSetup, ["new-project" if was_new_project else "existing-project"])
-    echo(style("DONE!", bold=True))
-    echo()
-    echo(
-        "You can now start the project with start, "
-        "if the usage instructions at the beginning don't require you to do anything else."
-    )
-    echo("If you need to read those again run " + style("riptide notes", bold=True))
-    echo()
+
+    ctx.console.print()
+
+    start_prefix = "You"
+
+    has_usage = "notices" in project["app"] and "usage" in project["app"]["notices"]
+    if has_usage:
+        has_usage = True
+        start_prefix = "After confirming you have done all the steps in the above-printed usage documentation, you"
+        ctx.console.print(
+            Panel(project["app"]["notices"]["usage"], title="Project usage instructions", title_align="left")
+        )
+        ctx.console.print()
+
+    contents: list[RenderableType] = [f"{start_prefix} can now start the project with [bold]riptide start[/]."]
+    if has_usage:
+        contents.append(
+            "If you need to read the usage instructions again later on, you can run [bold]riptide notes[/]."
+        )
+
+    contents.append("\nMake sure to also have a look at the project's README file, if it has one.")
+
     project = ctx.system_config["project"]
-    if "commands" in project["app"]:
-        some_commands_in_project = ", ".join(list(project["app"]["commands"].keys())[:3])
+    if "commands" in project["app"] and len(project["app"]["commands"]) > 0:
+        some_commands_in_project = ", ".join([f"[underline]{x}[/]" for x in project["app"]["commands"].keys()][:3])
         if "RIPTIDE_SHELL_LOADED" not in os.environ:
-            echo("It seems that the Riptide shell integration is not enabled yet.")
-            echo("If you want to set it up, have a look at the manual.")
-        else:
-            echo(
-                f"If you want to use commands like {some_commands_in_project} leave and re-enter the project directory. "
+            contents.append(
+                "It seems that the Riptide shell integration is not enabled yet.\n"
+                "If you want to set it up, have a look at the manual."
             )
+        else:
+            contents.append(
+                f"If you want to use commands like {some_commands_in_project}, "
+                f"leave and re-enter the project directory. "
+            )
+
+    panel = Panel(
+        Group(*contents),
+        title="[bold]:water_wave: Done! Your project is set up!",
+        title_align="left",
+    )
+    ctx.console.print(panel)
 
     open(get_project_setup_flag_path(project.folder()), "a").close()

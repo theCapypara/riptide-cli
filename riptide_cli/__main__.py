@@ -1,9 +1,12 @@
+import asyncio
 import os
 import warnings
 from typing import cast
 
 import click
-from click import Context, echo
+from click import Context
+from rich import traceback
+from rich.console import Console
 from riptide_cli.loader import RiptideCliCtx
 from setproctitle import setproctitle
 
@@ -102,6 +105,8 @@ def cli(
         exit()
 
     ctx = cast(RiptideCliCtx, ctx)
+    ctx.console = Console()
+    traceback.install(show_locals=True, suppress=[click, asyncio])
     ctx.riptide_options = {"verbose": verbose}
 
     # Don't allow running as root.
@@ -119,8 +124,7 @@ def cli(
         raise RiptideCliError("--update/-u is deprecated. Please run 'riptide update' instead.", ctx)
 
     if "RIPTIDE_SHELL_LOADED" not in os.environ and not ctx.resilient_parsing and not ignore_shell:
-        warn("Riptide shell integration not enabled.")
-        echo()
+        warn(ctx.console, "Riptide shell integration not enabled.", boxed=True)
 
     if project:
         projects = load_projects()
