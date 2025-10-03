@@ -61,6 +61,7 @@ def print_version():
     help="Path to the project file, if not given, the file will be located automatically.",
 )
 @click.option("-v", "--verbose", is_flag=True, help="Print errors and debugging information.")
+@click.option("--skip-hooks", is_flag=True, help="Do not trigger any hooks.")
 @click.option(
     "--rename",
     is_flag=True,
@@ -86,6 +87,7 @@ def cli(
     project=None,
     project_file=None,
     verbose=False,
+    skip_hooks=False,
     **kwargs,
 ):
     """
@@ -107,7 +109,7 @@ def cli(
     ctx = cast(RiptideCliCtx, ctx)
     ctx.console = Console()
     traceback.install(show_locals=True, suppress=[click, asyncio])
-    ctx.riptide_options = {"verbose": verbose}
+    ctx.riptide_options = {"verbose": verbose, "skip_hooks": skip_hooks}
 
     # Don't allow running as root.
     try:
@@ -138,7 +140,7 @@ def cli(
             )
 
     # Setup basic variables
-    ctx.riptide_options = {"project": project_file, "verbose": verbose, "rename": False}
+    ctx.riptide_options = {"project": project_file, "verbose": verbose, "skip_hooks": skip_hooks, "rename": False}
     ctx.riptide_options.update(kwargs)  # type: ignore
 
 

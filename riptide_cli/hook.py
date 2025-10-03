@@ -62,6 +62,16 @@ class RiptideCliHookDisplay(HookCliDisplay):
             rule(self.console, f"Hook [cyan]{name}[/] finished.", style="cyan")
 
 
+def get_skip_hooks(ctx) -> bool:
+    """Returns whether or not verbose mode is enabled"""
+    if hasattr(ctx, "riptide_options"):
+        return ctx.riptide_options["skip_hooks"]
+    if hasattr(ctx, "parent"):
+        if hasattr(ctx.parent, "riptide_options"):
+            return ctx.parent.riptide_options["skip_hooks"]
+    return True
+
+
 def trigger_and_handle_hook(
     ctx: RiptideCliCtx,
     c_event: AnyHookEvent,
@@ -71,6 +81,8 @@ def trigger_and_handle_hook(
     cli_hook_prefix: str | None = None,
     show_error_msg: bool = True,
 ):
+    if get_skip_hooks(ctx):
+        return
     if additional_host_mounts is None:
         additional_host_mounts = {}
     if isinstance(ctx.hook_manager.cli, RiptideCliHookDisplay):

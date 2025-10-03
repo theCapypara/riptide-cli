@@ -32,6 +32,7 @@ class RiptideCliCtx(Context):
 class RiptideCliOptions(TypedDict, total=False):
     project: str | None
     verbose: bool
+    skip_hooks: bool
     rename: bool
 
 
