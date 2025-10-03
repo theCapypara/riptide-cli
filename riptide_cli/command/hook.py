@@ -210,7 +210,10 @@ def add_hook_status(
     else:
         wait_time_value = "none"
     if config["wait_time"]["default"] is None and config["wait_time"]["project"] is None:
-        wait_time_value += " (not set)"
+        if compare_against_defaults is not None:
+            enable_value += " (from default)"
+        else:
+            enable_value += " (not set)"
     elif config["wait_time"]["project"] is None and project_is_loaded:
         wait_time_value += " (global)"
     tree.add("wait time: " + wait_time_value)

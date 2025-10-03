@@ -7,6 +7,7 @@ from click import ClickException
 from click.exceptions import Exit
 from rich.console import Console
 from rich.markup import escape
+from rich.panel import Panel
 from riptide.hook.additional_volumes import HookHostPathArgument
 from riptide.hook.cli import HookCliDisplay
 from riptide.hook.event import AnyHookEvent
@@ -44,7 +45,7 @@ class RiptideCliHookDisplay(HookCliDisplay):
 
     def system_warn(self, msg: str):
         prefix = self.prefix or "Hook"
-        self.console.print(f"[yellow]{prefix} Warning[/]: " + escape(msg))
+        self.console.print(Panel(escape(msg), title=f"{prefix} Warning", border_style="yellow", title_align="left"))
 
     def hook_execution_begin(self, event_key: str, name: str):
         prefix = f"{self.prefix}: " if self.prefix else ""
