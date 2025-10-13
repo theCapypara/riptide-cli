@@ -1,8 +1,14 @@
+import asyncio
 import os
 import warnings
+from typing import cast
 
 import click
-from click import echo
+from click import Context
+from rich import traceback
+from rich.console import Console
+from riptide_cli.loader import RiptideCliCtx
+from setproctitle import setproctitle
 
 if __name__ == "__main__":
     warnings.simplefilter("ignore", DeprecationWarning)
@@ -19,6 +25,7 @@ if __name__ == "__main__":
 
 import riptide_cli.command.config
 import riptide_cli.command.db
+import riptide_cli.command.hook
 import riptide_cli.command.importt
 import riptide_cli.command.project
 import riptide_cli.command.projects
@@ -54,6 +61,7 @@ def print_version():
     help="Path to the project file, if not given, the file will be located automatically.",
 )
 @click.option("-v", "--verbose", is_flag=True, help="Print errors and debugging information.")
+@click.option("--skip-hooks", is_flag=True, help="Do not trigger any hooks.")
 @click.option(
     "--rename",
     is_flag=True,
@@ -71,19 +79,37 @@ def print_version():
     help="Update repositories and pull images before executing the command.",
 )
 @click.pass_context
-def cli(ctx, version=False, update=False, ignore_shell=False, project=None, project_file=None, verbose=False, **kwargs):
+def cli(
+    ctx: Context,
+    version=False,
+    update=False,
+    ignore_shell=False,
+    project=None,
+    project_file=None,
+    verbose=False,
+    skip_hooks=False,
+    **kwargs,
+):
     """
     Define development environments for web applications.
     See full documentation at: https://riptide-docs.readthedocs.io/en/latest/
     """
     SystemFlag.IS_CLI = True
 
+    try:
+        setproctitle("riptide")
+    except Exception:
+        pass
+
     # Print version if requested
     if version:
         print_version()
         exit()
 
-    ctx.riptide_options = {"verbose": verbose}
+    ctx = cast(RiptideCliCtx, ctx)
+    ctx.console = Console()
+    traceback.install(show_locals=True, suppress=[click, asyncio])
+    ctx.riptide_options = {"verbose": verbose, "skip_hooks": skip_hooks}
 
     # Don't allow running as root.
     try:
@@ -100,8 +126,7 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
         raise RiptideCliError("--update/-u is deprecated. Please run 'riptide update' instead.", ctx)
 
     if "RIPTIDE_SHELL_LOADED" not in os.environ and not ctx.resilient_parsing and not ignore_shell:
-        warn("Riptide shell integration not enabled.")
-        echo()
+        warn(ctx.console, "Riptide shell integration not enabled.", boxed=True)
 
     if project:
         projects = load_projects()
@@ -115,13 +140,14 @@ def cli(ctx, version=False, update=False, ignore_shell=False, project=None, proj
             )
 
     # Setup basic variables
-    ctx.riptide_options = {"project": project_file, "verbose": verbose, "rename": False}
-    ctx.riptide_options.update(kwargs)
+    ctx.riptide_options = {"project": project_file, "verbose": verbose, "skip_hooks": skip_hooks, "rename": False}
+    ctx.riptide_options.update(kwargs)  # type: ignore
 
 
 # Load sub commands
 riptide_cli.command.config.load(cli)
 riptide_cli.command.db.load(cli)
+riptide_cli.command.hook.load(cli)
 riptide_cli.command.importt.load(cli)
 riptide_cli.command.project.load(cli)
 riptide_cli.command.projects.load(cli)

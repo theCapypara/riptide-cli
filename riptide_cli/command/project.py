@@ -2,8 +2,9 @@ import os
 import sys
 
 import click
-from click import echo, style
 from click.exceptions import Exit
+from rich.panel import Panel
+from rich.tree import Tree
 from riptide.config.command import in_service
 from riptide.config.document.command import KEY_IDENTIFIER_IN_SERVICE_COMMAND
 from riptide.engine.abstract import AbstractEngine, ExecError
@@ -19,25 +20,33 @@ from riptide_cli.command.constants import (
     CMD_STOP,
 )
 from riptide_cli.helpers import (
-    TAB,
     RiptideCliError,
     async_command,
     cli_section,
     interrupt_handler,
+    rule,
     warn,
 )
 from riptide_cli.lifecycle import start_project, status_project, stop_project
-from riptide_cli.loader import cmd_constraint_project_loaded, load_riptide_core
+from riptide_cli.loader import (
+    RiptideCliCtx,
+    cmd_constraint_project_loaded,
+    load_riptide_core,
+)
 from riptide_cli.setup_assistant import setup_assistant
+from setproctitle import setproctitle
 
 
-def cmd_constraint_project_set_up(ctx):
+def cmd_constraint_project_set_up(ctx: RiptideCliCtx):
     cmd_constraint_project_loaded(ctx)
     if not ctx.project_is_set_up:
-        echo(
-            style("Thanks for using Riptide! You seem to be working with a new project.\nPlease run the ", fg="yellow")
-            + style("setup", bold=True, fg="yellow")
-            + style(" command first.", fg="yellow")
+        ctx.console.print(
+            Panel(
+                "Thanks for using Riptide! You seem to be working with a new project.\nPlease run the [bold]setup[/bold] command first.",
+                border_style="yellow",
+                title="New Project",
+                title_align="left",
+            )
         )
         raise Exit(1)
 
@@ -185,13 +194,13 @@ def load(main):
         if interactive_service in normal_services:
             normal_services.remove(interactive_service)
 
-        echo(style("(1/3) Starting other services...", bg="cyan", fg="white"))
+        rule(ctx.console, "(1/3) Starting other services...", characters="=")
         await start_project(ctx, normal_services, show_status=False, command_group=cmd)
 
-        echo(style(f"(2/3) Stopping {interactive_service}...", bg="cyan", fg="white"))
+        rule(ctx.console, f"(2/3) Stopping {interactive_service}...", characters="=")
         await stop_project(ctx, [interactive_service], show_status=False)
 
-        echo(style(f"(3/3) Starting in {interactive_service} foreground mode...", bg="cyan", fg="white"))
+        rule(ctx.console, f"(3/3) Starting in {interactive_service} foreground mode...", characters="=")
         engine.service_fg(project, interactive_service, arguments, cmd)
 
     @cli_section("Service")
@@ -298,17 +307,15 @@ def load(main):
         cmd_constraint_project_loaded(ctx)
 
         if "notices" not in ctx.system_config["project"]["app"]:
-            warn("There are no notes defined for this project.")
+            warn(ctx.console, "There are no notes defined for this project.", boxed=True)
             return
         notes = ctx.system_config["project"]["app"]["notices"]
         if "installation" in notes:
-            echo(style("Installation notice:", bold=True))
-            echo(notes["installation"])
+            ctx.console.print(Panel(notes["installation"], title="Installation notice", title_align="left"))
+            ctx.console.print()
 
-        echo()
         if "usage" in notes:
-            echo(style("General usage notice:", bold=True))
-            echo(notes["usage"])
+            ctx.console.print(Panel(notes["usage"], title="General usage notice", title_align="left"))
 
     @cli_section("CLI")
     @main.command(
@@ -331,41 +338,45 @@ def load(main):
 
         When command is not specified, all commands will be listed.
         """
-        load_riptide_core(ctx)
+        load_riptide_core(ctx, False)
         cmd_constraint_project_set_up(ctx)
 
         project = ctx.system_config["project"]
         engine = ctx.engine
 
         if command is None:
-            click.echo(click.style("Commands:", bold=True))
             if "commands" not in project["app"] or len(project["app"]["commands"]) < 1:
-                click.echo(TAB + "No commands specified.")
+                ctx.console.print("No commands defined.")
                 return
+            cmd_tree = Tree("Commands")
             for name, cmd in dict(sorted(project["app"]["commands"].items())).items():
                 if "aliases" in cmd:
                     # alias
-                    click.echo(TAB + "- " + click.style(name, bold=True) + " (alias for " + cmd["aliases"] + ")")
+                    cmd_tree.add(f"[grey62]{name} (alias for {cmd['aliases']})[/]")
                 else:
                     # normal / in service cmd
-                    click.echo(TAB + "- " + click.style(name, bold=True))
+                    cmd_tree.add(name)
+            ctx.console.print(cmd_tree)
             return
 
         if "commands" not in project["app"] or command not in project["app"]["commands"]:
             raise RiptideCliError("Command not found.", ctx)
 
         # check if command is actually an alias
-        command = project["app"]["commands"][command].resolve_alias()["$name"]
-        cmd_obj = project["app"]["commands"][command]
+        command = project["app"]["commands"][command].resolve_alias()
 
         # Run Command
         try:
-            if KEY_IDENTIFIER_IN_SERVICE_COMMAND in cmd_obj:
-                # In Service comamnd
-                sys.exit(in_service.run(engine, project, command, arguments))
+            setproctitle(command["$name"])
+        except Exception:
+            pass
+        try:
+            if KEY_IDENTIFIER_IN_SERVICE_COMMAND in command:
+                # In Service command
+                sys.exit(in_service.run(engine, project, command["$name"], arguments))
             else:
                 # Normal command
-                sys.exit(engine.cmd(project, command, arguments))
+                sys.exit(engine.cmd(command, arguments))
         except (ExecError, ValueError) as err:
             raise RiptideCliError(str(err), ctx) from err
 
@@ -404,10 +415,14 @@ def load(main):
                 engine.exec(project, service, cols=cols, lines=lines, root=root)
             else:
                 if "RIPTIDE_DONT_SHOW_EXEC_WARNING" not in os.environ:
-                    warn("""Using exec --command is not recommended. Please consider creating a Command object instead.
+                    warn(
+                        ctx.console,
+                        """Using exec --command is not recommended. Please consider creating a Command object instead.
 
 Please see the documentation for more information. 
-To suppress this warning, set the environment variable RIPTIDE_DONT_SHOW_EXEC_WARNING.""")
+To suppress this warning, set the environment variable RIPTIDE_DONT_SHOW_EXEC_WARNING.""",
+                        boxed=True,
+                    )
 
                 engine.exec_custom(project, service, command, cols=cols, lines=lines, root=root)
         except ExecError as err:

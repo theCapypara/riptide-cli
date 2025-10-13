@@ -3,9 +3,15 @@ import os
 from asyncio import sleep
 
 import click
-from click import echo, style
+from rich.live import Live
+from rich.markup import escape
+from rich.panel import Panel
+from rich.table import Table
+from rich.tree import Tree
 from riptide.db.driver import db_driver_for_service
 from riptide.db.environments import DbEnvironments
+from riptide.hook.additional_volumes import HookHostPathArgument
+from riptide.hook.event import HookEvent
 from riptide_cli.command.constants import (
     CMD_DB_COPY,
     CMD_DB_DROP,
@@ -16,7 +22,8 @@ from riptide_cli.command.constants import (
     CMD_DB_STATUS,
     CMD_DB_SWITCH,
 )
-from riptide_cli.helpers import TAB, RiptideCliError, async_command, cli_section
+from riptide_cli.helpers import RiptideCliError, async_command, cli_section
+from riptide_cli.hook import trigger_and_handle_hook
 from riptide_cli.lifecycle import start_project, stop_project
 from riptide_cli.loader import cmd_constraint_project_loaded, load_riptide_core
 
@@ -50,17 +57,22 @@ def load(main):
         assert db_driver is not None  # todo: error handling
 
         running = engine.service_status(project, dbenv.db_service["$name"])
-
-        if running:
-            echo(f"{'Status':<20}: " + style("Running", bold=True, fg="green"))
-        else:
-            echo(f"{'Status':<20}: " + style("Not running", bold=True, fg="red"))
-
-        for key, label in db_driver.collect_info().items():
-            echo(f"{key:<20}: {label}")
-
         current = dbenv.currently_selected_name()
-        echo("Active environment  : " + style(current, bold=True))
+
+        grid = Table.grid(expand=False)
+        grid.add_column()
+        grid.add_column()
+        grid.add_row("Active environment: ", current)
+        grid.add_row("Service: ", dbenv.db_service["$name"])
+        if running:
+            running_text = "[green]:play_button: Running"
+        else:
+            running_text = "[red]:black_square_for_stop: Not running"
+        grid.add_row("Status: ", running_text)
+        for key, label in db_driver.collect_info().items():
+            grid.add_row(escape(key) + ": ", escape(label))
+
+        ctx.console.print(grid)
 
     @cli_section("Database")
     @main.command(CMD_DB_LIST)
@@ -79,20 +91,19 @@ def load(main):
         cur = dbenv.currently_selected_name()
 
         if not machine_readable and not current:
-            echo("Database environments: ")
+            db_tree = Tree("Database environments")
 
             for env in dbenv.list():
                 if env == cur:
-                    echo(TAB + "- " + style(env, bold=True) + " [Current]")
+                    db_tree.add(f"{env} [bold](Current)[/]")
                 else:
-                    echo(TAB + "- " + env)
+                    db_tree.add(env)
 
-            echo()
-            echo("Use db-switch to switch environments.")
+            ctx.console.print(db_tree)
         elif not current:
-            echo(json.dumps({"envs": dbenv.list(), "current": cur}))
+            print(json.dumps({"envs": dbenv.list(), "current": cur}))
         else:
-            echo(cur)
+            print(cur)
 
     @cli_section("Database")
     @main.command(CMD_DB_SWITCH)
@@ -121,13 +132,19 @@ def load(main):
         engine = ctx.engine
         dbenv = DbEnvironments(project, engine)
 
+        trigger_and_handle_hook(ctx, HookEvent.PreDbNew, [name])
+
         try:
             dbenv.new(name, copy_from=None)
-            echo()
-            echo("New environment created: " + style(name, bold=True))
-            echo()
+            ctx.console.print(
+                Panel(
+                    f"New environment '{name}' created",
+                    title="Creating database environment",
+                    title_align="left",
+                )
+            )
         except FileExistsError:
-            raise RiptideCliError("Envrionment with this name already exists.", ctx)
+            raise RiptideCliError("Environment with this name already exists.", ctx)
         except NameError:
             raise RiptideCliError("Invalid name for new environment, do not use special characters", ctx)
         except Exception as ex:
@@ -135,6 +152,8 @@ def load(main):
 
         if not stay:
             await switch_impl(ctx, name)
+
+        trigger_and_handle_hook(ctx, HookEvent.PostDbNew, [name])
 
     @cli_section("Database")
     @main.command(CMD_DB_DROP)
@@ -149,14 +168,17 @@ def load(main):
         engine = ctx.engine
         dbenv = DbEnvironments(project, engine)
 
-        echo("Deleting... this may take a while...")
+        panel = Panel(
+            f"Deleting environment '{name}'... this may take a while...",
+            title="Deleting database environment",
+            title_align="left",
+        )
         try:
-            dbenv.drop(name)
-            echo()
-            echo("Environment deleted: " + style(name, bold=True))
-            echo()
+            with Live(panel, refresh_per_second=5, console=ctx.console):
+                dbenv.drop(name)
+                panel.renderable = f"Database environment '{name}' deleted."
         except FileNotFoundError:
-            raise RiptideCliError("Envrionment with this name does not exist.", ctx)
+            raise RiptideCliError("Environment with this name does not exist.", ctx)
         except OSError:
             raise RiptideCliError("Can not delete the environment that is currently active.", ctx)
         except Exception as ex:
@@ -178,16 +200,22 @@ def load(main):
         engine = ctx.engine
         dbenv = DbEnvironments(project, engine)
 
-        echo("Copying... this may take a while...")
+        trigger_and_handle_hook(ctx, HookEvent.PreDbCopy, [name_to_copy, name_new])
+
+        # 2. Import
+        panel = Panel(
+            f"Copying from '{escape(name_to_copy)}' to '{escape(name_new)}'... this may take a while...",
+            title="Copying database environment",
+            title_align="left",
+        )
         try:
-            dbenv.new(name_new, copy_from=name_to_copy)
-            echo()
-            echo("New environment created: " + style(name_new, bold=True))
-            echo()
+            with Live(panel, refresh_per_second=5, console=ctx.console):
+                dbenv.new(name_new, copy_from=name_to_copy)
+                panel.renderable = f"New environment '{name_new}' created"
         except FileExistsError:
-            raise RiptideCliError("Envrionment with this name already exists.", ctx)
+            raise RiptideCliError("Environment with this name already exists.", ctx)
         except FileNotFoundError:
-            raise RiptideCliError("Envrionment to copy from not found.", ctx)
+            raise RiptideCliError("Environment to copy from not found.", ctx)
         except NameError:
             raise RiptideCliError("Invalid name for new environment, do not use special characters", ctx)
         except Exception as ex:
@@ -195,6 +223,8 @@ def load(main):
 
         if not stay:
             await switch_impl(ctx, name_new)
+
+        trigger_and_handle_hook(ctx, HookEvent.PostDbCopy, [name_to_copy, name_new])
 
     @cli_section("Database")
     @main.command(CMD_DB_IMPORT)
@@ -238,17 +268,20 @@ def load(main):
         if not was_running:
             await start_project(ctx, [db_name], show_status=False)
 
+        trigger_and_handle_hook(ctx, HookEvent.PreDbExport, [env_name])
+
         # 2. Export
-        echo(f"Exporting from {env_name}... this may take a while...")
+        panel = Panel(f"Exporting from '{env_name}'... this may take a while...", title="Exporting", title_align="left")
         try:
-            db_driver.export(engine, os.path.abspath(file))
-            echo()
-            echo(f"Environment {env_name} exported.")
-            echo()
+            with Live(panel, refresh_per_second=5, console=ctx.console):
+                db_driver.export(engine, file)
+                panel.renderable = f"Database environment '{env_name}' exported to '{file}'."
         except FileNotFoundError:
             raise RiptideCliError("Environment does not exist. Create it first with db-create", ctx)
         except Exception as ex:
             raise RiptideCliError("Error exporting environment", ctx) from ex
+
+        trigger_and_handle_hook(ctx, HookEvent.PostDbExport, [env_name, HookHostPathArgument(file)])
 
 
 async def switch_impl(ctx, name):
@@ -258,6 +291,8 @@ async def switch_impl(ctx, name):
     assert dbenv.db_service is not None
     db_name = dbenv.db_service["$name"]
 
+    trigger_and_handle_hook(ctx, HookEvent.PreDbSwitch, [dbenv.currently_selected_name(), name])
+
     # 1. If running, stop database
     was_running = engine.status(project)[db_name]
     if was_running:
@@ -266,9 +301,13 @@ async def switch_impl(ctx, name):
     # 2. Switch environment
     try:
         dbenv.switch(name)
-        echo()
-        echo("Environment switched to: " + style(name, bold=True))
-        echo()
+        ctx.console.print(
+            Panel(
+                f"Environment switched to '{name}'",
+                title="Switching database environment",
+                title_align="left",
+            )
+        )
     except FileNotFoundError:
         raise RiptideCliError("Environment does not exist. Create it with db-new or db-copy.", ctx)
     except Exception as ex:
@@ -277,6 +316,8 @@ async def switch_impl(ctx, name):
     # 3. If was running: start database again
     if was_running:
         await start_project(ctx, [db_name])
+
+    trigger_and_handle_hook(ctx, HookEvent.PostDbSwitch, [name])
 
 
 async def importt_impl(ctx, file):
@@ -302,15 +343,24 @@ async def importt_impl(ctx, file):
         # TODO: Some databases need a while. How to do this better? mysqladmin for example doesn't help :(
         await sleep(15)
 
+    trigger_and_handle_hook(ctx, HookEvent.PreDbImport, [env_name, HookHostPathArgument(file)])
+
     # 2. Import
-    echo(f"Importing into database environment {env_name}... this may take a while...")
+    panel = Panel(
+        f"Importing into database environment '{env_name}'... this may take a while...",
+        title="Importing database environment",
+        title_align="left",
+    )
     try:
-        db_driver.importt(engine, os.path.abspath(file))
-        echo()
-        echo(f"Database environment {env_name} imported.")
-        echo()
-        return True
+        with Live(panel, refresh_per_second=5, console=ctx.console):
+            db_driver.importt(engine, os.path.abspath(file))
+            panel.renderable = f"Database environment '{env_name}' imported."
+
     except FileNotFoundError:
         raise RiptideCliError("Environment does not exist. Create it first with db:create", ctx)
     except Exception as ex:
         raise RiptideCliError("Error importing database environment", ctx) from ex
+
+    trigger_and_handle_hook(ctx, HookEvent.PostDbImport, [env_name, HookHostPathArgument(file)])
+
+    return True

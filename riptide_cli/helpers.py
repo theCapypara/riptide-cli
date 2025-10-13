@@ -1,10 +1,22 @@
-import asyncio
-import traceback
-from functools import update_wrapper
+from __future__ import annotations
 
-from click import ClickException, echo, style
-from click._compat import get_text_stderr
+import asyncio
+import sys
+from functools import update_wrapper
+from typing import TYPE_CHECKING
+
+import click
+import rich
+from click import ClickException
+from rich.console import Console, RenderableType
+from rich.markup import escape
+from rich.panel import Panel
+from rich.style import Style
+from rich.text import TextType
 from riptide.engine.results import ResultQueue
+
+if TYPE_CHECKING:
+    from riptide_cli.loader import RiptideCliCtx
 
 
 def get_is_verbose(ctx):
@@ -20,6 +32,8 @@ def get_is_verbose(ctx):
 class RiptideCliError(ClickException):
     """Custom error class for displaying errors in the Riptide CLI"""
 
+    ctx: RiptideCliCtx
+
     def __init__(self, message, ctx):
         super().__init__(message)
         self.ctx = ctx
@@ -30,21 +44,31 @@ class RiptideCliError(ClickException):
         verbose = get_is_verbose(self.ctx) or file is not None
 
         if file is None:
-            file = get_text_stderr()
+            file = sys.stderr
         if verbose:
-            echo(style(traceback.format_exc(), bg="red"), file=file)
+            self.ctx.console.print_exception(show_locals=True, suppress=[click, asyncio])
         else:
-            echo(style(self.message, bg="red", fg="white", bold=True), file=file)
+            exception_message = escape(self.message)
             current_err: BaseException = self
             previous_message = str(self)
             while current_err.__context__ is not None:
                 current_err = current_err.__context__
                 # Filter duplicate exception messages. 'schema' used by configcrunch does that for example.
                 if previous_message != str(current_err):
-                    echo(style(f">> Caused by: {str(current_err)}", bg="red", fg="white"), file=file)
+                    exception_message += f"\n[grey62]>> Caused by:[/] {escape(str(current_err))}"
                 previous_message = str(current_err)
-            echo()
-            echo(style("Use -v to show stack traces.", fg="yellow"), file=file)
+
+            rich.print(
+                Panel(
+                    exception_message,
+                    title="Error",
+                    subtitle="Use -v to show stack traces",
+                    border_style="red",
+                    title_align="left",
+                    subtitle_align="left",
+                ),
+                file=file,
+            )
 
     def __str__(self):
         error_string = self.__class__.__name__ + ": " + self.message
@@ -53,8 +77,19 @@ class RiptideCliError(ClickException):
         return error_string
 
 
-def warn(msg, with_prefix=True):
-    echo((style("Warning: ", fg="yellow", bold=True) if with_prefix else "") + style(msg, fg="yellow"))
+def warn(console: Console, msg: RenderableType, boxed: bool = False):
+    if isinstance(msg, str):
+        msg = escape(msg)
+    if boxed:
+        console.print(Panel(msg, title="Warning", border_style="yellow", title_align="left"))
+    else:
+        console.print(f"[yellow][bold]Warning:[/bold] {msg}")
+
+
+def rule(console: Console, title: TextType = "", *, characters: str = "─", style: str | Style = "rule.line"):
+    if isinstance(title, str):
+        title = "[default]" + title
+    console.rule(f"[{style}]{characters}{characters} [/]{title}", style=style, align="left", characters=characters)
 
 
 def cli_section(section):
@@ -91,34 +126,19 @@ def async_command(interrupt_handler=lambda _, __: True):
     return decorator
 
 
-def header(msg, bold=False):
-    """Uniform header style"""
-    return style(msg, bg="cyan", fg="white", bold=bold)
-
-
-TAB = "    "
-
-
 def interrupt_handler(ctx, ex: KeyboardInterrupt | SystemExit):
     """Handle interrupts raised while running asynchronous AsyncIO code, fun stuff!"""
     # In case there are any open progress bars, close them:
-    if hasattr(ctx, "progress_bars"):
-        for progress_bar in reversed(ctx.progress_bars.values()):
-            progress_bar.close()
-            echo()
+    if hasattr(ctx, "live_display"):
+        ctx.live_display.stop()
     if hasattr(ctx, "start_stop_errors"):
         from riptide_cli.lifecycle import display_errors
 
         display_errors(ctx.start_stop_errors, ctx)
-    echo(
-        style(
-            "Riptide process was interrupted. Services might be in an invalid state. You may want to run riptide stop.",
-            bg="red",
-            fg="white",
-        )
+    ctx.console.print(
+        "[white on red]Riptide process was interrupted. Services might be in an invalid state. You may want to run riptide stop."
     )
-    echo("Finishing up... Stand by!")
+    ctx.console.print("Finishing up... Stand by!")
     # Poison all ResultQueues to halt all start/stop threads after the next step.
     ResultQueue.poison()
-    echo("Done!")
-    exit(1)
+    ctx.console.print("Done! If Riptide does not exit, hit CTRL+C.")
