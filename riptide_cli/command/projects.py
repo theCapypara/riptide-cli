@@ -1,8 +1,8 @@
 import click
-
+from rich.tree import Tree
 from riptide.config.loader import load_projects, remove_project
 from riptide_cli.command.constants import CMD_PROJECT_LIST, CMD_PROJECT_REMOVE
-from riptide_cli.helpers import cli_section, TAB, RiptideCliError
+from riptide_cli.helpers import RiptideCliError, cli_section
 
 
 def load(main):
@@ -16,10 +16,11 @@ def load(main):
         Lists projects.
         This includes all projects that were ever loaded with Riptide.
         """
-        click.echo(click.style("Projects:", bold=True))
+        pr_tree = Tree("Projects")
         projects = load_projects(True)
         for name, path in projects.items():
-            click.echo(TAB + "- " + click.style(name, bold=True) + ": " + path)
+            pr_tree.add(f"[bold]{name}[/]: {path}")
+        ctx.parent.console.print(pr_tree)
 
     @cli_section("Project")
     @main.command(CMD_PROJECT_REMOVE)
@@ -41,4 +42,4 @@ def load(main):
         if project not in projects:
             raise RiptideCliError(f"Project {project} not found.", ctx)
         remove_project(project)
-        click.echo(click.style(f"Project {project} removed."))
+        ctx.parent.console.print(f"Project {project} removed.")

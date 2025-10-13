@@ -3,9 +3,9 @@ from __future__ import annotations
 import os
 from typing import TypedDict, cast
 
-import click
-from click import Context, echo
+from click import Context
 from configcrunch import ReferencedDocumentNotFound
+from rich.console import Console
 from riptide.config.document.config import Config
 from riptide.config.files import get_project_setup_flag_path
 from riptide.config.hosts import update_hosts_file
@@ -15,10 +15,12 @@ from riptide.engine.loader import load_engine
 from riptide.hook.manager import HookManager
 from riptide_cli.command.constants import CMD_CONFIG_EDIT_USER
 from riptide_cli.helpers import RiptideCliError, warn
+from riptide_cli.hook import RiptideCliHookDisplay
 from riptide_cli.shell_integration import update_shell_integration
 
 
 class RiptideCliCtx(Context):
+    console: Console
     loaded: bool
     system_config: Config | None
     project_is_set_up: bool
@@ -30,6 +32,7 @@ class RiptideCliCtx(Context):
 class RiptideCliOptions(TypedDict, total=False):
     project: str | None
     verbose: bool
+    skip_hooks: bool
     rename: bool
 
 
@@ -47,6 +50,8 @@ def load_riptide_core(ctx: RiptideCliCtx, allow_heavy_operations=True, *, skip_p
     """
     Loads the project + system config and the configured engine for use with the CLI and the hook manager.
 
+    Also copies the console reference to this context, if the parent context has it.
+
     If the 'allow_heavy_operations' flag is set, additionally:
     - Updates projects mapping
     - Updates hosts file
@@ -54,6 +59,9 @@ def load_riptide_core(ctx: RiptideCliCtx, allow_heavy_operations=True, *, skip_p
     - Creates CLI alias scripts
     - Initializes the hook manager (loads git hooks, etc.)
     """
+    if ctx.parent is not None:
+        ctx.console = ctx.parent.console  # type: ignore
+
     if not hasattr(ctx, "loaded") or not ctx.loaded:
         # Load the system config (and project).
         ctx.system_config = None
@@ -66,8 +74,11 @@ def load_riptide_core(ctx: RiptideCliCtx, allow_heavy_operations=True, *, skip_p
             # Don't show this if the user may have called the command. Since we don't know the invoked command at this
             # point, we just check if the name of the command is anywhere in the protected_args
             if not ctx.resilient_parsing:
-                warn(f"You don't have a configuration file for Riptide yet. Use {CMD_CONFIG_EDIT_USER} to create one.")
-                echo()
+                warn(
+                    ctx.console,
+                    f"You don't have a configuration file for Riptide yet. Use {CMD_CONFIG_EDIT_USER} to create one.",
+                    boxed=True,
+                )
         except ReferencedDocumentNotFound as ex:
             raise RiptideCliError(
                 "Failed to load project because a referenced document could not be found.\n\n"
@@ -85,7 +96,9 @@ def load_riptide_core(ctx: RiptideCliCtx, allow_heavy_operations=True, *, skip_p
                     except FileExistsError as err:
                         raise RiptideCliError(str(err), ctx) from err
                     # Update /etc/hosts entries for the loaded project
-                    update_hosts_file(ctx.system_config, warning_callback=lambda msg: warn(msg))
+                    update_hosts_file(
+                        ctx.system_config, warning_callback=lambda msg: warn(ctx.console, msg, boxed=True)
+                    )
 
                 # Check if project setup command was run yet.
                 ctx.project_is_set_up = os.path.exists(
@@ -106,13 +119,13 @@ def load_riptide_core(ctx: RiptideCliCtx, allow_heavy_operations=True, *, skip_p
                 raise RiptideCliError("Connection to engine failed.", ctx) from ex
 
             # Load the hook manager
-            ctx.hook_manager = HookManager(ctx.system_config, ctx.engine, cli_echo=click.echo, cli_style=click.style)
+            ctx.hook_manager = HookManager(ctx.system_config, ctx.engine, cli=RiptideCliHookDisplay(ctx.console))
             if allow_heavy_operations:
                 ctx.hook_manager.setup()
 
         ctx.loaded = True
 
 
-def cmd_constraint_project_loaded(ctx):
-    if "project" not in ctx.system_config:
+def cmd_constraint_project_loaded(ctx: RiptideCliCtx):
+    if ctx.system_config is None or "project" not in ctx.system_config:
         raise RiptideCliError("A project must be loaded to use this command.", ctx)

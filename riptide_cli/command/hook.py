@@ -2,7 +2,7 @@ import os.path
 from typing import cast
 
 import click
-from click import echo, style
+from rich.tree import Tree
 from riptide.hook.additional_volumes import HookHostPathArgument
 from riptide.hook.event import HookEvent
 from riptide.hook.manager import ApplicableEventConfiguration, HookArgument
@@ -11,7 +11,7 @@ from riptide_cli.command.constants import (
     CMD_HOOK_LIST,
     CMD_HOOK_TRIGGER,
 )
-from riptide_cli.helpers import TAB, RiptideCliError, cli_section, warn
+from riptide_cli.helpers import RiptideCliError, cli_section, warn
 from riptide_cli.hook import trigger_and_handle_hook
 from riptide_cli.loader import RiptideCliCtx, load_riptide_core
 from setproctitle import setproctitle
@@ -46,21 +46,23 @@ def load(main):
         (defaults, events) = ctx.hook_manager.get_current_configuration()
         events = sorted(events, key=lambda e: HookEvent.key_for(e["event"]))
 
-        echo(style("[Default]:", bold=True))
-        print_hook_status(defaults, not default, None)
+        hook_tree = Tree("Event Configuration")
+        default_branch = hook_tree.add("<Default>")
+        add_hook_status(default_branch, defaults, not default, None)
 
         for event in events:
             if all or len(event["hooks"]) > 0:
                 key = HookEvent.key_for(event["event"])
-                echo("")
-                echo(f"{key}:")
-                print_hook_status(event, not default, defaults)
-                print(TAB + "Hooks:")
+                event_branch = hook_tree.add(key)
+                add_hook_status(event_branch, event, not default, defaults)
+                hooks_branch = event_branch.add("Hooks:")
                 if len(event["hooks"]) <= 0:
-                    print(TAB + TAB + "None")
+                    hooks_branch.add("None")
                 for hook in event["hooks"]:
                     from_global_suffix = " (from global)" if hook["defined_in"] == "default" else ""
-                    print(TAB + TAB + f"- {hook['key']}{from_global_suffix}")
+                    hooks_branch.add(f"{hook['key']}{from_global_suffix}")
+
+        ctx.console.print(hook_tree)
 
     @cli_section("Hook")
     @main.command(CMD_HOOK_CONFIGURE)
@@ -111,7 +113,7 @@ def load(main):
         assert ctx.system_config is not None
 
         if not default and "project" not in ctx.system_config:
-            warn("No project is loaded, using global default instead.")
+            warn(ctx.console, "No project is loaded, using global default instead.")
             default = True
 
         c_event = None
@@ -128,12 +130,13 @@ def load(main):
         (defaults, events) = ctx.hook_manager.get_current_configuration()
 
         if event_name:
-            echo("Event configured:")
+            tree = Tree(f"Event {event_name} configured:")
             event = next(event for event in events if event["event"] == c_event)
-            print_hook_status(event, not default, defaults)
+            add_hook_status(tree, event, not default, defaults)
         else:
-            echo("Default configured:")
-            print_hook_status(defaults, not default, None)
+            tree = Tree("Default configured:")
+            add_hook_status(tree, defaults, not default, None)
+        ctx.console.print(tree)
 
     @cli_section("Hook")
     @main.command(
@@ -180,18 +183,19 @@ def load(main):
         else:
             new_arguments = arguments  # type: ignore
 
-        trigger_and_handle_hook(ctx, c_event, new_arguments, show_error_msg=False, nl=False, cli_hook_prefix="Riptide")
+        trigger_and_handle_hook(ctx, c_event, new_arguments, show_error_msg=False, cli_hook_prefix="Riptide")
 
 
-def print_hook_status(
+def add_hook_status(
+    tree: Tree,
     config: ApplicableEventConfiguration,
     project_is_loaded: bool,
     compare_against_defaults: ApplicableEventConfiguration | None,
 ):
     if config["enabled"]["effective"]:
-        enable_value = style("yes", fg="green")
+        enable_value = "[green]yes[/]"
     else:
-        enable_value = style("no", fg="red")
+        enable_value = "[red]no[/]"
     if config["enabled"]["default"] is None and config["enabled"]["project"] is None:
         if compare_against_defaults is not None:
             enable_value += " (from default)"
@@ -199,14 +203,17 @@ def print_hook_status(
             enable_value += " (not set)"
     elif config["enabled"]["project"] is None and project_is_loaded:
         enable_value += " (from global)"
-    echo(TAB + "enabled: " + enable_value)
+    tree.add("enabled: " + enable_value)
 
     if config["wait_time"]["effective"] > 0:
         wait_time_value = f"{config['wait_time']['effective']}s"
     else:
         wait_time_value = "none"
     if config["wait_time"]["default"] is None and config["wait_time"]["project"] is None:
-        wait_time_value += " (not set)"
+        if compare_against_defaults is not None:
+            enable_value += " (from default)"
+        else:
+            enable_value += " (not set)"
     elif config["wait_time"]["project"] is None and project_is_loaded:
         wait_time_value += " (global)"
-    echo(TAB + "wait time: " + wait_time_value)
+    tree.add("wait time: " + wait_time_value)

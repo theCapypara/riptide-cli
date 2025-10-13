@@ -1,8 +1,10 @@
 import os
 import shutil
+from time import sleep
 
 import click
-from click import echo
+from rich.live import Live
+from rich.panel import Panel
 from riptide.hook.additional_volumes import HookHostPathArgument
 from riptide.hook.event import HookEvent
 from riptide_cli.command.constants import CMD_IMPORT_DB, CMD_IMPORT_FILES
@@ -80,17 +82,22 @@ def files_impl(ctx, key, path_to_import):
 
     trigger_and_handle_hook(ctx, HookEvent.PreFileImport, [key, HookHostPathArgument(path_to_import)])
 
-    echo(f"Importing {key} ({import_spec['target']}) from {path_to_import}")
-    echo("Copying... this can take some time...")
-    os.makedirs(os.path.dirname(destination), exist_ok=True)
+    panel = Panel(
+        f"Copying {key} ({import_spec['target']}) from {path_to_import}... this may take a while...",
+        title="Importing",
+        title_align="left",
+    )
     try:
-        if source_is_file:
-            shutil.copy2(path_to_import, destination)
-        else:
-            shutil.copytree(path_to_import, destination, dirs_exist_ok=True)
+        with Live(panel, refresh_per_second=5, console=ctx.console):
+            os.makedirs(os.path.dirname(destination), exist_ok=True)
+            if source_is_file:
+                shutil.copy2(path_to_import, destination)
+            else:
+                shutil.copytree(path_to_import, destination, dirs_exist_ok=True)
+            sleep(10)
+            panel.renderable = "File successfully imported."
 
-        trigger_and_handle_hook(ctx, HookEvent.PostFileImport, [key, HookHostPathArgument(path_to_import)])
     except Exception as ex:
         raise RiptideCliError("Error while copying", ctx) from ex
 
-    echo("Done!")
+    trigger_and_handle_hook(ctx, HookEvent.PostFileImport, [key, HookHostPathArgument(path_to_import)])
