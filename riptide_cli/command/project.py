@@ -136,7 +136,7 @@ def load(main):
     @async_command(interrupt_handler=interrupt_handler)
     async def start_fg(ctx, default, all, services, interactive_service, arguments, cmd):
         """
-        Starts services and then runs a service in foreground.
+        Runs a service in foreground.
 
         When using this command, Riptide will start all your services
         as normal except for one service you specify.
