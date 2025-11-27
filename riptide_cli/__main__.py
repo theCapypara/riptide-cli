@@ -27,6 +27,7 @@ import riptide_cli.command.config
 import riptide_cli.command.db
 import riptide_cli.command.hook
 import riptide_cli.command.importt
+import riptide_cli.command.log
 import riptide_cli.command.project
 import riptide_cli.command.projects
 from riptide.config.loader import load_projects
@@ -149,6 +150,7 @@ riptide_cli.command.config.load(cli)
 riptide_cli.command.db.load(cli)
 riptide_cli.command.hook.load(cli)
 riptide_cli.command.importt.load(cli)
+riptide_cli.command.log.load(cli)
 riptide_cli.command.project.load(cli)
 riptide_cli.command.projects.load(cli)
 for plugin in load_plugins().values():
