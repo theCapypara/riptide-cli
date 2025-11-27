@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, Literal, Sequence
 
-from click import ClickException
 from click.exceptions import Exit
 from rich.console import Console
 from rich.markup import escape
@@ -12,7 +11,7 @@ from riptide.hook.additional_volumes import HookHostPathArgument
 from riptide.hook.cli import HookCliDisplay
 from riptide.hook.event import AnyHookEvent
 from riptide.hook.manager import HookArgument
-from riptide_cli.helpers import rule
+from riptide_cli.helpers import RiptideCliError, rule
 
 if TYPE_CHECKING:
     from riptide_cli.loader import RiptideCliCtx
@@ -90,7 +89,7 @@ def trigger_and_handle_hook(
     ret = ctx.hook_manager.trigger_event_on_cli(c_event, arguments, additional_host_mounts)
     if ret > 0:
         if show_error_msg:
-            exc = ClickException("A hook failed")
+            exc = RiptideCliError("A hook failed", ctx)
             exc.exit_code = ret
             raise exc
         raise Exit(ret)
