@@ -130,9 +130,12 @@ def load(main):
         (defaults, events) = ctx.hook_manager.get_current_configuration()
 
         if event_name:
-            tree = Tree(f"Event {event_name} configured:")
-            event = next(event for event in events if event["event"] == c_event)
-            add_hook_status(tree, event, not default, defaults)
+            try:
+                tree = Tree(f"Event {event_name} configured:")
+                event = next(event for event in events if event["event"] == c_event)
+                add_hook_status(tree, event, not default, defaults)
+            except StopIteration:
+                raise RiptideCliError("No such event is defined for this project", ctx)
         else:
             tree = Tree("Default configured:")
             add_hook_status(tree, defaults, not default, None)
