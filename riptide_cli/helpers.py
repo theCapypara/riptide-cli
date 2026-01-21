@@ -115,11 +115,11 @@ def async_command(interrupt_handler=lambda _, __: True):
 
     def decorator(f):
         def wrapper(ctx, *args, **kwargs):
-            loop = asyncio.get_event_loop()
-            try:
-                return loop.run_until_complete(f(ctx, *args, **kwargs))
-            except (KeyboardInterrupt, SystemExit) as ex:
-                interrupt_handler(ctx, ex)
+            with asyncio.Runner() as runner:
+                try:
+                    return runner.run(f(ctx, *args, **kwargs))
+                except (KeyboardInterrupt, SystemExit) as ex:
+                    interrupt_handler(ctx, ex)
 
         return update_wrapper(wrapper, f)
 
