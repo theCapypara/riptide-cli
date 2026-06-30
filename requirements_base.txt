@@ -1,5 +1,5 @@
 Click==8.4.2
-rich==14.3.3
+rich==15.0.0
 click-help-colors==0.9.4
 packaging
 ruff
