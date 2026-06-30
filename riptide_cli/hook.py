@@ -11,6 +11,7 @@ from riptide.hook.additional_volumes import HookHostPathArgument
 from riptide.hook.cli import HookCliDisplay
 from riptide.hook.event import AnyHookEvent
 from riptide.hook.manager import HookArgument
+
 from riptide_cli.helpers import RiptideCliError, rule
 
 if TYPE_CHECKING:
@@ -90,6 +91,6 @@ def trigger_and_handle_hook(
     if ret > 0:
         if show_error_msg:
             exc = RiptideCliError("A hook failed", ctx)
-            exc.exit_code = ret
+            RiptideCliError.exit_code = ret
             raise exc
         raise Exit(ret)
